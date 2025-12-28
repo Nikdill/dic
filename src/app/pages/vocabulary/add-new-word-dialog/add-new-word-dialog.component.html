@@ -1,0 +1,20 @@
+<mat-card appearance="outlined">
+  <mat-card-content>
+    <div class="flex flex-col">
+      <mat-form-field class="grow">
+        <mat-label>Word</mat-label>
+        <input matInput [value]="data.inputValue" #wordInputRef />
+      </mat-form-field>
+
+      <mat-form-field class="grow">
+        <mat-label>Translation</mat-label>
+        <input matInput #translationInputRef/>
+      </mat-form-field>
+    </div>
+
+  </mat-card-content>
+
+  <mat-card-actions align="end">
+    <button matButton (click)="addNewWord()">Add</button>
+  </mat-card-actions>
+</mat-card>
