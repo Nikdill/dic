@@ -1,20 +1,20 @@
- <div class="flex w-full gap-4 items-center">
+ <div class="flex w-full gap-4">
    <mat-form-field class="grow">
      <mat-label>Search</mat-label>
-     <input matInput (input)="onInput($event)" />
+     <input #searchInputRef matInput (input)="onInput($event)" />
    </mat-form-field>
 
-   @if(isShowAddBtn$ | async) {
-     <button matButton="filled" (click)="addNewWord()">Add</button>
-   }
+   <div class="flex gap-2 pt-2">
+     @if(searchInputRef.value.trim().length) {
+       <button matButton="filled" (click)="addNewWord(searchInputRef)">Add</button>
+     }
+   </div>
  </div>
 
 
 @if(listOfWords$ | async; as list) {
-
-
+    Count: {{ wordsCount$ | async }}
     <mat-action-list>
-
       @for(item of list; track item.id) {
         <button mat-list-item class="w-full">
           <span matListItemIcon>

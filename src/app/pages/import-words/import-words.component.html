@@ -1,0 +1,15 @@
+<mat-card appearance="outlined">
+  <mat-card-content>
+    <div class="flex flex-col">
+      <mat-form-field class="grow">
+        <mat-label>Add text</mat-label>
+        <textarea class="min-h-80" #textAreaRef matInput></textarea>
+      </mat-form-field>
+    </div>
+
+  </mat-card-content>
+
+  <mat-card-actions align="end">
+    <button matButton (click)="addWords(textAreaRef)">Add</button>
+  </mat-card-actions>
+</mat-card>

@@ -1,15 +1,8 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core'
-import {
-  MatAccordion,
-  MatExpansionPanel, MatExpansionPanelDescription,
-  MatExpansionPanelHeader,
-  MatExpansionPanelTitle,
-} from '@angular/material/expansion'
+import { ChangeDetectionStrategy, Component, DestroyRef, DOCUMENT, inject } from '@angular/core'
 import { MatIcon } from '@angular/material/icon'
 import { MatFormField, MatInput, MatLabel } from '@angular/material/input'
 import {
   MatActionList,
-  MatList,
   MatListItem,
   MatListItemIcon,
   MatListItemLine,
@@ -17,7 +10,7 @@ import {
 } from '@angular/material/list'
 import { FirestoreService } from '../../core/firestore/firestore.service'
 import { AsyncPipe } from '@angular/common'
-import { BehaviorSubject, combineLatest, map, ReplaySubject } from 'rxjs'
+import { BehaviorSubject, combineLatest, map } from 'rxjs'
 import { MatButton } from '@angular/material/button'
 import { Dialog, DialogModule } from '@angular/cdk/dialog'
 import { AddNewWordDialogComponent } from './add-new-word-dialog/add-new-word-dialog.component'
@@ -48,34 +41,46 @@ import { ScrollingModule } from '@angular/cdk/scrolling'
 export class VocabularyComponent {
   private readonly dialog = inject(Dialog);
   protected readonly firestoreService = inject(FirestoreService);
-  protected readonly inputValue = new BehaviorSubject('');
-  protected readonly listOfWords$ = this.firestoreService.listOfWords$.pipe(map(list => {
-    return list?.map(item => ({ ...item, translation: item.translations.join('; ')}))
-  }));
+  protected readonly listOfWords$ = this.firestoreService.listOfWords$;
+  protected readonly wordsCount$ = this.firestoreService.wordsCount$;
+  protected readonly documentRef  = inject(DOCUMENT);
+  protected readonly destroyRef  = inject(DestroyRef);
+  constructor() {
+    const handler = (e: Event) => {
+      console.log(e);
+      const scrollHeight = Math.max(
+        this.documentRef.body.scrollHeight,
+        this.documentRef.documentElement.scrollHeight,
+        this.documentRef.body.offsetHeight,
+        this.documentRef.documentElement.offsetHeight,
+        this.documentRef.body.clientHeight,
+        this.documentRef.documentElement.clientHeight
+      );
 
-  protected isShowAddBtn$ = combineLatest({
-    inputValue: this.inputValue,
-    list: this.firestoreService.listOfWords$
-  }).pipe(
-    map(({ list, inputValue}) => {
-      return !!inputValue.length && !list?.some(item => item.word.trim().toLowerCase().startsWith(inputValue.trim().toLowerCase()))
-    })
-  );
+      const scrollY = this.documentRef.defaultView?.scrollY || 0;
 
-  onInput(event: Event) {
-    this.inputValue.next((event.currentTarget as HTMLInputElement).value.trim())
+      if(scrollY > scrollHeight - (scrollHeight * 0.3) - (this.documentRef.defaultView?.innerHeight || 0)) {
+        this.firestoreService.nextPage();
+      }
+    };
+
+    this.documentRef.defaultView?.addEventListener('scroll', handler);
+    this.destroyRef.onDestroy(() => {
+      this.documentRef?.defaultView?.removeEventListener('scroll', handler);
+    });
   }
 
-  addNewWord() {
+  protected onInput(event: Event) {
+    this.firestoreService.search((event.currentTarget as HTMLInputElement).value);
+  }
+
+  protected addNewWord(inputElement: HTMLInputElement) {
     this.dialog.open(AddNewWordDialogComponent, {
       minWidth: '300px',
       data: {
-        inputValue: this.inputValue.value
+        inputValue: inputElement.value.trim().toLowerCase()
       }
-    })
-  }
-
-  protected trackByFn(_: number, item: { id: string }) {
-    return item.id
+    });
+    inputElement.value = '';
   }
 }

@@ -26,12 +26,13 @@ export class AddNewWordDialogComponent {
   protected readonly data = inject<{ inputValue: string }>(DIALOG_DATA);
   protected readonly firestoreService = inject(FirestoreService);
 
-  protected readonly translation = new BehaviorSubject('');
-
   protected addNewWord() {
     this.firestoreService.addWordToList({
       word: this.wordInputRef().nativeElement.value,
       translation: this.translationInputRef().nativeElement.value,
-    }).subscribe()
+    }).subscribe(() => {
+      this.wordInputRef().nativeElement.value = '';
+      this.translationInputRef().nativeElement.value = '';
+    })
   }
 }
