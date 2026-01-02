@@ -70,7 +70,7 @@ export class VocabularyComponent {
           bufferCount(2,1),
           filter(([prev, current]) => {
             return prev.scrollY < current.scrollY
-              && current.scrollY > current.scrollHeight - (current.scrollHeight * 0.2) - windowRef.innerHeight
+              && current.scrollY > current.scrollHeight - windowRef.innerHeight - 300
           })
         )
         .subscribe(() => {
@@ -80,10 +80,6 @@ export class VocabularyComponent {
         subscription.unsubscribe()
       });
     }
-  }
-
-  protected next() {
-    this.firestoreService.nextPage();
   }
 
   protected onInput(event: Event) {

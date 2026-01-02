@@ -4,7 +4,7 @@ import { FIREBASE_FIRE_STORE } from '../firebase/firebase-app'
 import { AuthService } from '../auth/auth.service'
 import {
   BehaviorSubject, catchError, Observable, of, shareReplay, switchMap, take, combineLatest, map,
-  distinctUntilChanged, debounceTime, startWith, from, scan, tap,
+  distinctUntilChanged, debounceTime, startWith, from, scan, tap, zip,
 } from 'rxjs';
 
 
@@ -277,6 +277,51 @@ export class FirestoreService {
 
 
      return this.cache.get(args.uid)?.flat(1) || [];
+  }
+
+  getWordsForRepetition(): Observable<RecordType[]> {
+    return this.authService.auth$.pipe(
+      switchMap(
+        auth => {
+          if(!auth) {
+            return of([]);
+          }
+
+          return zip([
+            getDocs(query(
+              collection(this.firestore, "users", auth.uid, "vocabulary"),
+              orderBy('createdAt'),
+              limit(1)
+            )),
+            getDocs(query(
+              collection(this.firestore, "users", auth.uid, "vocabulary"),
+              orderBy('createdAt', 'desc'),
+              limit(1)
+            ))
+          ]).pipe(
+            switchMap(([first, last]) => {
+              const firstCreatedAt = first.docs.map(item => (item.data()as RecordTypeRaw).createdAt)[0];
+              const lastCreatedAt = last.docs.map(item => (item.data() as RecordTypeRaw).createdAt)[0];
+              if (!firstCreatedAt || !lastCreatedAt) {
+                return of([])
+              }
+              const diff = lastCreatedAt - firstCreatedAt;
+              const startAfterCreatedAt = Math.floor(Math.random() * diff) + firstCreatedAt;
+              return getDocs(query(
+                collection(this.firestore, "users", auth.uid, "vocabulary"),
+                orderBy('createdAt'),
+                where('status', '==', 2),
+                startAfter(startAfterCreatedAt),
+                limit(60)
+              )).then(result => {
+
+                return result.docs.map(doc => mapDoc({ ...doc.data() as RecordTypeRaw, id: doc.id }))
+              })
+            })
+          )
+        }
+      )
+    )
   }
 
   private searchWords(args: {uid: string; word: string }) {
