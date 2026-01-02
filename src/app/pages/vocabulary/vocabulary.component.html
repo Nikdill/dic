@@ -11,7 +11,7 @@
    </div>
  </div>
 
-
+<button (click)="next()">Next</button>
 @if(listOfWords$ | async; as list) {
     Count: {{ wordsCount$ | async }}
     <mat-action-list>

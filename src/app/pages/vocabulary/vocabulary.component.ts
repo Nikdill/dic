@@ -10,7 +10,7 @@ import {
 } from '@angular/material/list'
 import { FirestoreService } from '../../core/firestore/firestore.service'
 import { AsyncPipe } from '@angular/common'
-import { BehaviorSubject, combineLatest, map } from 'rxjs'
+import { BehaviorSubject, bufferCount, combineLatest, filter, fromEvent, map } from 'rxjs'
 import { MatButton } from '@angular/material/button'
 import { Dialog, DialogModule } from '@angular/cdk/dialog'
 import { AddNewWordDialogComponent } from './add-new-word-dialog/add-new-word-dialog.component'
@@ -46,28 +46,44 @@ export class VocabularyComponent {
   protected readonly documentRef  = inject(DOCUMENT);
   protected readonly destroyRef  = inject(DestroyRef);
   constructor() {
-    const handler = (e: Event) => {
-      console.log(e);
-      const scrollHeight = Math.max(
-        this.documentRef.body.scrollHeight,
-        this.documentRef.documentElement.scrollHeight,
-        this.documentRef.body.offsetHeight,
-        this.documentRef.documentElement.offsetHeight,
-        this.documentRef.body.clientHeight,
-        this.documentRef.documentElement.clientHeight
-      );
+    if(this.documentRef.defaultView) {
+      const windowRef = this.documentRef.defaultView;
+      const subscription = fromEvent(windowRef, 'scroll')
+        .pipe(
+          map(() => {
+          const scrollHeight = Math.max(
+            this.documentRef.body.scrollHeight,
+            this.documentRef.documentElement.scrollHeight,
+            this.documentRef.body.offsetHeight,
+            this.documentRef.documentElement.offsetHeight,
+            this.documentRef.body.clientHeight,
+            this.documentRef.documentElement.clientHeight
+          );
 
-      const scrollY = this.documentRef.defaultView?.scrollY || 0;
+          const scrollY = this.documentRef.defaultView?.scrollY || 0;
 
-      if(scrollY > scrollHeight - (scrollHeight * 0.3) - (this.documentRef.defaultView?.innerHeight || 0)) {
-        this.firestoreService.nextPage();
-      }
-    };
+          return {
+            scrollHeight,
+            scrollY
+          }
+        }),
+          bufferCount(2,1),
+          filter(([prev, current]) => {
+            return prev.scrollY < current.scrollY
+              && current.scrollY > current.scrollHeight - (current.scrollHeight * 0.2) - windowRef.innerHeight
+          })
+        )
+        .subscribe(() => {
+          this.firestoreService.nextPage();
+        })
+      this.destroyRef.onDestroy(() => {
+        subscription.unsubscribe()
+      });
+    }
+  }
 
-    this.documentRef.defaultView?.addEventListener('scroll', handler);
-    this.destroyRef.onDestroy(() => {
-      this.documentRef?.defaultView?.removeEventListener('scroll', handler);
-    });
+  protected next() {
+    this.firestoreService.nextPage();
   }
 
   protected onInput(event: Event) {

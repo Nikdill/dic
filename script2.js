@@ -18,6 +18,16 @@ const result = wordsStart.default
   .concat(words4_2.default)
   .concat(words5.default)
   .concat(words5_2.default)
-  .map(item => ({ ...item, createdAt: Date.now() }))
+  .map((item, index, array) => {
+    const foundCreatedAt = array.some(i => i.createdAt === item.createdAt);
+    if(foundCreatedAt) {
+      return {
+        ...item,
+        createdAt: item.createdAt + index
+      }
+    }
+
+    return item;
+  })
 
 fs.writeFileSync('./words-data-set.ts', `export default ${JSON.stringify(result)}`, 'utf8');

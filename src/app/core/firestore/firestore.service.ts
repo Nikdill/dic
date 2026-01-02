@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core'
-import { collection, query, getCountFromServer, getDocs, updateDoc, onSnapshot, writeBatch, orderBy, doc, startAfter, startAt, endAt, limit, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { collection, query, getCountFromServer, getDocs, updateDoc, onSnapshot, writeBatch, orderBy, doc, startAfter, startAt, endAt, limit, setDoc, where } from "firebase/firestore";
 import { FIREBASE_FIRE_STORE } from '../firebase/firebase-app'
 import { AuthService } from '../auth/auth.service'
 import {
@@ -224,7 +224,7 @@ export class FirestoreService {
             } else {
               return setDoc(
                 doc(collection(this.firestore, "users", auth.uid, "vocabulary")),
-                {...result, createdAt: result.createdAt || serverTimestamp() }
+                {...result, createdAt: result.createdAt || Date.now() }
               );
             }
           }).then(() => {
@@ -247,26 +247,36 @@ export class FirestoreService {
       return valueFromCache.slice(0, args.page).flat(1);
     }
 
-    const prevPageResult = valueFromCache[args.page - 2];
-    const startAfterCreatedAt = prevPageResult ? prevPageResult[prevPageResult.length - 1].createdAt : args.startAfterCreatedAt;
+    let startAfterCreatedAt: number | undefined;
 
-    const resultRaw = await getDocs(query(
+    if(valueFromCache.length === 0) {
+      startAfterCreatedAt = args.startAfterCreatedAt
+    }
+    const prevPageResult = valueFromCache[args.page - 2];
+    if(prevPageResult?.length) {
+      startAfterCreatedAt = prevPageResult[prevPageResult.length - 1].createdAt
+    }
+
+    if(startAfterCreatedAt) {
+      const resultRaw = await getDocs(query(
         collection(this.firestore, "users", args.uid, "vocabulary"),
         orderBy('createdAt', 'desc'),
-      ...(startAfterCreatedAt ? [startAfter(startAfterCreatedAt)] : []),
-      limit(30)
-    ));
+        ...(startAfterCreatedAt ? [startAfter(startAfterCreatedAt)] : []),
+        limit(30)
+      ));
 
 
-     const result = resultRaw.docs
-          .map(doc => (mapDoc({ ...doc.data() as RecordTypeRaw, id: doc.id })))
+      const result = resultRaw.docs
+        .map(doc => (mapDoc({ ...doc.data() as RecordTypeRaw, id: doc.id })))
 
 
       valueFromCache.push(result);
 
-     this.cache.set(args.uid, valueFromCache);
+      this.cache.set(args.uid, valueFromCache);
+    }
 
-     return result;
+
+     return this.cache.get(args.uid)?.flat(1) || [];
   }
 
   private searchWords(args: {uid: string; word: string }) {

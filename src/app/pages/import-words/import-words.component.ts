@@ -28,7 +28,6 @@ export class ImportWordsComponent {
     let words: { word: string; translations: string[]; status: number; createdAt: number }[] = [];
     try {
       words = JSON.parse(textAreaElement.value);
-      words = words.map(item => ({ ...item, status: 0}))
     } catch (e: unknown) {
       console.error(e);
     }
