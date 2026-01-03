@@ -1,35 +1,20 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core'
 import { FirestoreService } from '../../../core/firestore/firestore.service'
-import { BehaviorSubject, map, shareReplay, switchMap, tap } from 'rxjs'
-import { AsyncPipe, JsonPipe } from '@angular/common'
-import { MatButton } from '@angular/material/button'
-
-// function getRandomIndexes(max: number, count: number, buffer: number[] = []) {
-//   if(count === buffer.length) {
-//     return buffer;
-//   }
-//
-//   let result = Math.floor(Math.random() * max);
-//   if(buffer.includes(result)) {
-//     return getRandomIndexes(max, count, buffer);
-//   } else {
-//     buffer.push(result);
-//   }
-//
-//   if(buffer.length === count) {
-//     return buffer;
-//   } else {
-//     return getRandomIndexes(max, count, buffer);
-//   }
-// }
-
-function getRandomIndex(max: number, exclude: number[]) {
-  const index = Math.floor(Math.random() * max);
-  if(exclude.includes(index)) {
-    return getRandomIndex(max, exclude)
-  }
-  return index;
-}
+import {
+  asyncScheduler,
+  BehaviorSubject, filter,
+  finalize,
+  map,
+  NEVER,
+  Observable,
+  shareReplay, startWith,
+  switchMap,
+  takeWhile,
+  timer,
+} from 'rxjs'
+import { AsyncPipe } from '@angular/common'
+import { PlaySoundFactory } from './play-sound'
+import { MatIcon } from '@angular/material/icon'
 
 type WordItemType = {
   word: string;
@@ -44,17 +29,37 @@ type WordItemType = {
   templateUrl: 'repetition.component.html',
   imports: [
     AsyncPipe,
-    MatButton,
+    MatIcon,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RepetitionComponent {
   private readonly firestoreService = inject(FirestoreService);
+  private readonly playSound = PlaySoundFactory();
 
   private readonly wordCounter$ = new BehaviorSubject(0);
+  protected readonly wordLeftCounter$ = this.wordCounter$.pipe(
+    map(value => 30 - value),
+    shareReplay({ refCount: true, bufferSize: 1 })
+  );
 
   protected readonly correctAnswersCounter$ = new BehaviorSubject(0);
   protected readonly incorrectAnswersCounter$ = new BehaviorSubject(0);
+
+  protected readonly selected = signal<WordItemType['variants'][number] | undefined>(undefined);
+
+  protected readonly timer$ =
+
+    this.wordCounter$.pipe(
+      filter(Boolean),
+      switchMap(() => {
+        return timer(0, 1000).pipe(
+          map(count => 7 - count),
+          takeWhile(value => value >= 0),
+          startWith(7),
+        )
+      })
+    );
 
   protected readonly queue$ = this.firestoreService.getWordsForRepetition().pipe(
     map(list => list || []),
@@ -86,14 +91,20 @@ export class RepetitionComponent {
   )
 
 
-  protected selectVariant(variant: WordItemType['variants'][number]) {
-    this.wordCounter$.next(this.wordCounter$.value + 1);
+  protected async selectVariant(variant: WordItemType['variants'][number]) {
+    this.selected.set(variant);
+    asyncScheduler.schedule(() => {
+      this.wordCounter$.next(this.wordCounter$.value + 1);
+      this.selected.set(undefined);
+    }, 1000);
     if(variant.type === 'correct') {
       this.correctAnswersCounter$.next(this.correctAnswersCounter$.value + 1);
+      this.playSound('/correct.mp3').subscribe();
     }
 
     if(variant.type === 'incorrect') {
       this.incorrectAnswersCounter$.next(this.incorrectAnswersCounter$.value + 1);
+      this.playSound('/wrong.mp3').subscribe();
     }
   }
 
