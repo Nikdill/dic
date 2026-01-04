@@ -3,6 +3,7 @@ import { inject } from '@angular/core'
 import { AuthService } from './core/auth/auth.service'
 import { map, take } from 'rxjs'
 import { ImportWordsComponent } from './pages/import-words/import-words.component'
+import { FirestoreService } from './core/firestore/firestore.service'
 function authGuard(redirectPath: string) {
   return () => {
     const router = inject(Router);
@@ -44,6 +45,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/training/training.component').then(m => m.TrainingComponent),
     canActivate: [
       authGuard('')
-    ]
+    ],
+    resolve: {
+      words: () => {
+        return inject(FirestoreService).getWordsForRepetition()
+      }
+    },
+    runGuardsAndResolvers: 'always'
   }
 ];

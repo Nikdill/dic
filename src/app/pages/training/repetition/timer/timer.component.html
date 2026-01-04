@@ -1,0 +1,16 @@
+<svg class="absolute inset-0 w-full h-full">
+  <circle
+    [attr.cx]="radius() + strokeWidth() / 2"
+    [attr.cy]="radius() + strokeWidth() / 2"
+    [attr.r]="radius()"
+    [style.strokeDashoffset]="offset()"
+    fill="none"
+    stroke="var(--color-white)"
+    [style.strokeWidth]="strokeWidth()"
+    stroke-linecap="round"
+    stroke-dasharray="565.48"
+    stroke-dashoffset="565.48"
+    style="transform: rotateZ(-90deg); transform-origin: center center"
+  />
+</svg>
+<ng-content />

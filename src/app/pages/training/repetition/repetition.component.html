@@ -1,57 +1,95 @@
 <div class="fixed inset-0 flex items-center justify-center bg-emerald-500 p-4">
   <div class="flex flex-col items-center gap-20 w-full">
+
+
     @if(queue$ | async; as item) {
       <div class="flex flex-col gap-2 items-center justify-center text-4xl">
-        <div
-          class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 overflow-hidden"
-          [class.bg-emerald-700]="selected()?.type === 'correct'"
-          [class.border-emerald-700]="selected()?.type === 'correct'"
-          [class.border-red-800]="selected()?.type === 'incorrect'"
-          [class.border-white]="!selected()"
-          [class.text-white]="!selected() || selected()?.type === 'correct'"
-          [class.text-red-800]="selected()?.type === 'incorrect'"
-        >
-          @switch (selected()?.type) {
-            @case ('correct') {
-              <mat-icon class="scale-200" aria-hidden="false" aria-label=Play>done</mat-icon>
+        @if(selected(); as selected) {
+          <div
+            class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 overflow-hidden"
+            [class.bg-emerald-700]="selected.type === 'correct'"
+            [class.border-emerald-700]="selected.type === 'correct'"
+            [class.border-rose-600]="selected.type === 'incorrect'"
+            [class.border-white]="!selected"
+            [class.text-white]="!selected || selected.type === 'correct'"
+            [class.text-rose-600]="selected.type === 'incorrect'"
+          >
+            @switch (selected.type) {
+              @case ('correct') {
+                <mat-icon class="scale-200" aria-hidden="false" aria-label=Correct>done</mat-icon>
+              }
+              @case ('incorrect') {
+                <mat-icon  class="scale-200" aria-hidden="false" aria-label=Incorrect>clear</mat-icon>
+              }
             }
-            @case ('incorrect') {
-              <mat-icon  class="scale-200" aria-hidden="false" aria-label=Play>clear</mat-icon>
-            }
-            @default {
-              @if(timer$ | async; as seconds) {
-                  <div class=" absolute left-0 right-0 bottom-0 bg-red-800 transition-all" [style.height.%]="((7 - seconds) * 100) / 7"></div>
-                  <div class="relative z-1">
+          </div>
+        } @else {
+            @if(wordCounter$ | async) {
+              @if(timeEnded()) {
+                <div class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 border-rose-600 text-rose-600 overflow-hidden">
+                  <mat-icon  class="scale-200" aria-hidden="false" aria-label="Time's up">hourglass_disabled</mat-icon>
+                </div>
+              } @else {
+                <dic-timer [duration]="4000" [radius]="39" [strokeWidth]="2" (ended)="timeEnded.set(true)">
+                  <div class="text-white">
                     {{wordLeftCounter$ | async}}
                   </div>
-              } @else {
-                <div class="relative z-1">
-                  {{wordLeftCounter$ | async}}
-                </div>
+                </dic-timer>
               }
-
+            } @else {
+              <div class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 border-white text-white overflow-hidden">
+                {{wordLeftCounter$ | async}}
+              </div>
             }
-          }
-        </div>
-        <div class="text-white">
+        }
+
+
+        <div class="text-white text-center">
           {{item.word}}
         </div>
       </div>
-      <div class="flex flex-col gap-4 w-full">
+      <div class="flex flex-col gap-4 w-full max-w-100">
         @for (variant of item.variants; track variant) {
           @let incorrect = selected() === variant && variant.type === 'incorrect';
           @let correct = selected() === variant && variant.type === 'correct';
+          @let disabled = timeEnded() && variant.type === 'incorrect';
           <button
             class="p-2 text-xl rounded-md min-w-80 whitespace-nowrap text-ellipsis overflow-hidden"
             [class.bg-gray-100]="!(correct || incorrect)"
-            [class.bg-red-800]="incorrect"
+            [class.bg-rose-600]="incorrect"
             [class.bg-emerald-700]="correct"
             [class.text-white]="correct || incorrect"
-            (click)="selectVariant(variant)"
+            (click)="selectVariant(item, variant)"
+            [disabled]="disabled"
+            [class.text-gray-300]="disabled"
           >
             {{ variant.translation }}
           </button>
         }
+      </div>
+    } @else {
+      <div class="flex flex-col justify-center items-center gap-4">
+        <div class="flex gap-4 text-4xl items-center">
+          <div class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 border-emerald-700 bg-emerald-700 text-white overflow-hidden">
+            <mat-icon class="scale-200" aria-hidden="false" aria-label=Correct>done</mat-icon>
+          </div>
+          <div class="text-white">
+            {{ correctAnswersIds.size }}
+          </div>
+        </div>
+        <div class="flex gap-4 text-4xl items-center">
+          <div class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 border-rose-600 text-rose-600 overflow-hidden">
+            <mat-icon  class="scale-200" aria-hidden="false" aria-label=Incorrect>clear</mat-icon>
+          </div>
+          <div class="text-white">
+            {{ incorrectAnswersIds.size }}
+          </div>
+        </div>
+        <div>
+          <button type=button (click)="replay()" class="text-white w-20 h-20">
+            <mat-icon class="scale-200" aria-hidden="false" aria-label=Replay>replay</mat-icon>
+          </button>
+        </div>
       </div>
     }
     <div>
