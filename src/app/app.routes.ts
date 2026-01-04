@@ -1,4 +1,4 @@
-import { Router, Routes } from '@angular/router';
+import { RedirectCommand, Router, Routes } from '@angular/router';
 import { inject } from '@angular/core'
 import { AuthService } from './core/auth/auth.service'
 import { map, take } from 'rxjs'
@@ -42,15 +42,9 @@ export const routes: Routes = [
   },
   {
     path: 'training',
-    loadComponent: () => import('./pages/training/training.component').then(m => m.TrainingComponent),
+    loadChildren: () => import('./pages/training/training-routes').then(m => m.TRAINING_ROUTES),
     canActivate: [
       authGuard('')
     ],
-    resolve: {
-      words: () => {
-        return inject(FirestoreService).getWordsForRepetition()
-      }
-    },
-    runGuardsAndResolvers: 'always'
   }
 ];

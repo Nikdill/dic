@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FirestoreService, RecordType } from '../../../core/firestore/firestore.service'
 import {
   asyncScheduler,
-  BehaviorSubject,
+  BehaviorSubject, endWith, filter,
   map,
   shareReplay,
-  switchMap,
+  switchMap, take, takeWhile,
   tap,
 } from 'rxjs'
 import { AsyncPipe } from '@angular/common'
@@ -24,8 +24,6 @@ type WordItemType = {
   }[]
 }
 
-const WORDS_COUNT = 30;
-
 @Component({
   selector: 'dic-repetition',
   templateUrl: 'repetition.component.html',
@@ -42,10 +40,21 @@ export class RepetitionComponent {
   private readonly voice = inject(Voice);
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
+  private readonly list$ = this.activatedRoute.data.pipe(
+    map(data => data['words'] as RecordType[]),
+    map(list => list || []),
+    shareReplay({ refCount: true, bufferSize: 1})
+  );
 
   protected readonly wordCounter$ = new BehaviorSubject(0);
   protected readonly wordLeftCounter$ = this.wordCounter$.pipe(
-    map(value => WORDS_COUNT - value),
+    switchMap(counter => {
+
+      return this.list$.pipe(
+        take(1),
+        map(list => Math.floor(list.length / 2) - counter),
+      )
+    }),
     shareReplay({ refCount: true, bufferSize: 1 })
   );
 
@@ -55,14 +64,13 @@ export class RepetitionComponent {
   protected readonly selected = signal<WordItemType['variants'][number] | undefined>(undefined);
   protected readonly timeEnded = signal(false);
 
-  protected readonly queue$ = this.wordCounter$.pipe(
-    switchMap(counter => {
-      return this.activatedRoute.data.pipe(
-        map(data => data['words'] as RecordType[]),
-        map(list => list || []),
+
+
+  protected readonly queue$ = this.list$.pipe(
         map(list => {
-          const words = list.slice(0, WORDS_COUNT)
-          const translations = list.slice(WORDS_COUNT).sort(() => Math.random() > 0.5 ? -1 : 1)
+          const half = Math.floor(list.length / 2);
+          const words = list.slice(0, half)
+          const translations = list.slice(half).sort(() => Math.random() > 0.5 ? -1 : 1)
           return words
             .map((item, index) => {
               return {
@@ -79,15 +87,18 @@ export class RepetitionComponent {
               }
             })
         }),
-        map(list => list.at(counter)),
+        switchMap(list => {
+          return this.wordCounter$.pipe(
+            map(counter => list.at(counter)),
+            takeWhile(Boolean),
+            endWith(undefined)
+          )
+        }),
         tap(item => {
           if(item) {
             this.voice.play(item.word);
           }
-        })
-        )
-
-    }),
+        }),
     shareReplay({ refCount: true, bufferSize: 1})
   )
 
@@ -111,25 +122,38 @@ export class RepetitionComponent {
       this.playSound('/wrong.mp3').subscribe();
     }
 
-    const correctIds = Array.from(this.correctAnswersIds);
-    const incorrectIds = Array.from(this.incorrectAnswersIds);
-    if(correctIds.length + incorrectIds.length === WORDS_COUNT) {
-      this.firestoreService.updateRepetitionWords({
-        correct: correctIds,
-        incorrect: incorrectIds
-      }).subscribe()
-    }
+
+
+    this.list$.pipe(
+      take(1),
+      map(list => {
+        const correctIds = Array.from(this.correctAnswersIds);
+        const incorrectIds = Array.from(this.incorrectAnswersIds);
+        return {
+          correctIds,
+          incorrectIds,
+          listLength: Math.floor(list.length / 2)
+        }
+      }),
+      filter(({ listLength, correctIds, incorrectIds }) => {
+        return correctIds.length + incorrectIds.length === listLength
+      }),
+      switchMap(({ correctIds, incorrectIds }) => {
+        return this.firestoreService.updateRepetitionWords({
+          correct: correctIds,
+          incorrect: incorrectIds
+        })
+      })
+    ).subscribe()
   }
 
 
   protected replay() {
-
-    this.router.navigate(['training'], { onSameUrlNavigation: 'reload' }).then(() => {
-      this.wordCounter$.next(0);
-      this.correctAnswersIds.clear();
-      this.incorrectAnswersIds.clear();
-      this.selected.set(undefined);
-      this.timeEnded.set(false);
-    })
+    this.correctAnswersIds.clear();
+    this.incorrectAnswersIds.clear();
+    this.wordCounter$.next(0);
+    this.selected.set(undefined);
+    this.timeEnded.set(false);
+    this.router.navigate(['training'], { onSameUrlNavigation: 'reload' }).then();
   }
 }
