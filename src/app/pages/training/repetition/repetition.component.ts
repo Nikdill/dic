@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core'
-import { FirestoreService, RecordType } from '../../../core/firestore/firestore.service'
 import {
   asyncScheduler,
   BehaviorSubject, endWith, filter,
@@ -14,6 +13,8 @@ import { MatIcon } from '@angular/material/icon'
 import { TimerComponent } from './timer/timer.component'
 import { Voice } from '../../../shared/voice'
 import { ActivatedRoute, Router } from '@angular/router'
+import { RepetitionService } from '../../../feature/training/repetition/repetition.service'
+import { RecordType } from '../../../core/word.record'
 
 type WordItemType = {
   id: string;
@@ -35,7 +36,7 @@ type WordItemType = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RepetitionComponent {
-  private readonly firestoreService = inject(FirestoreService);
+  private readonly repetitionService = inject(RepetitionService);
   private readonly playSound = PlaySoundFactory();
   private readonly voice = inject(Voice);
   private readonly router = inject(Router);
@@ -139,7 +140,7 @@ export class RepetitionComponent {
         return correctIds.length + incorrectIds.length === listLength
       }),
       switchMap(({ correctIds, incorrectIds }) => {
-        return this.firestoreService.updateRepetitionWords({
+        return this.repetitionService.updateRepetitionWords({
           correct: correctIds,
           incorrect: incorrectIds
         })

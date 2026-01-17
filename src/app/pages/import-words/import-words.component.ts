@@ -1,10 +1,8 @@
-import { ChangeDetectionStrategy, Component, ElementRef, inject, viewChild } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core'
 import { MatFormField, MatInput, MatLabel } from '@angular/material/input'
-import { Dialog, DIALOG_DATA } from '@angular/cdk/dialog'
 import { MatCard, MatCardActions, MatCardContent } from '@angular/material/card'
 import { MatButton } from '@angular/material/button'
-import { BehaviorSubject } from 'rxjs'
-import { FirestoreService } from '../../core/firestore/firestore.service'
+import { ImportWordsService } from '../../feature/import-words/import-words.service'
 
 @Component({
   selector: 'dic-import-words-dialog',
@@ -21,7 +19,7 @@ import { FirestoreService } from '../../core/firestore/firestore.service'
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImportWordsComponent {
-  protected readonly firestoreService = inject(FirestoreService);
+  protected readonly importWordsService = inject(ImportWordsService);
 
 
   protected addWords(textAreaElement: HTMLTextAreaElement) {
@@ -32,7 +30,7 @@ export class ImportWordsComponent {
       console.error(e);
     }
     if(words.length) {
-      this.firestoreService.addWordsToList(words).subscribe(() => {
+      this.importWordsService.addWordsToList(words).subscribe(() => {
         textAreaElement.value = '';
       });
     }

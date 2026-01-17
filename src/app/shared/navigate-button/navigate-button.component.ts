@@ -5,7 +5,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core'
   templateUrl: 'navigate-button.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'flex items-center justify-center rounded-2xl text-3xl text-white p-10'
+    class: 'flex items-center justify-center rounded-xl text-3xl p-10'
   }
 })
 export class NavigateButtonComponent {}

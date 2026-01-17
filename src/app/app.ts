@@ -1,9 +1,10 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { NavigationComponent } from './shared/navigation/navigation.component'
 
 @Component({
   selector: 'dic-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, NavigationComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

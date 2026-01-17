@@ -8,14 +8,14 @@ import {
   MatListItemLine,
   MatListItemTitle,
 } from '@angular/material/list'
-import { FirestoreService } from '../../core/firestore/firestore.service'
 import { AsyncPipe } from '@angular/common'
-import { BehaviorSubject, bufferCount, combineLatest, filter, fromEvent, map } from 'rxjs'
+import { bufferCount, filter, fromEvent, map } from 'rxjs'
 import { MatButton } from '@angular/material/button'
 import { Dialog, DialogModule } from '@angular/cdk/dialog'
 import { AddNewWordDialogComponent } from './add-new-word-dialog/add-new-word-dialog.component'
 import { DicPlayButtonComponent } from './play-button/dic-play-button.component'
 import { ScrollingModule } from '@angular/cdk/scrolling'
+import { VocabularyService } from '../../feature/vocabulary/vocabulary.service'
 
 @Component({
   selector: 'dic-vocabulary',
@@ -40,9 +40,9 @@ import { ScrollingModule } from '@angular/cdk/scrolling'
 })
 export class VocabularyComponent {
   private readonly dialog = inject(Dialog);
-  protected readonly firestoreService = inject(FirestoreService);
-  protected readonly listOfWords$ = this.firestoreService.listOfWords$;
-  protected readonly wordsCount$ = this.firestoreService.wordsCount$;
+  protected readonly vocabularyService = inject(VocabularyService);
+  protected readonly listOfWords$ = this.vocabularyService.listOfWords$;
+  protected readonly wordsCount$ = this.vocabularyService.wordsCount$;
   protected readonly documentRef  = inject(DOCUMENT);
   protected readonly destroyRef  = inject(DestroyRef);
   constructor() {
@@ -74,7 +74,7 @@ export class VocabularyComponent {
           })
         )
         .subscribe(() => {
-          this.firestoreService.nextPage();
+          this.vocabularyService.nextPage();
         })
       this.destroyRef.onDestroy(() => {
         subscription.unsubscribe()
@@ -83,7 +83,7 @@ export class VocabularyComponent {
   }
 
   protected onInput(event: Event) {
-    this.firestoreService.search((event.currentTarget as HTMLInputElement).value);
+    this.vocabularyService.search((event.currentTarget as HTMLInputElement).value);
   }
 
   protected addNewWord(inputElement: HTMLInputElement) {

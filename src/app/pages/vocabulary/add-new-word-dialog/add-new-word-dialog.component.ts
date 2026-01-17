@@ -3,8 +3,7 @@ import { MatFormField, MatInput, MatLabel } from '@angular/material/input'
 import { DIALOG_DATA } from '@angular/cdk/dialog'
 import { MatCard, MatCardActions, MatCardContent } from '@angular/material/card'
 import { MatButton } from '@angular/material/button'
-import { BehaviorSubject } from 'rxjs'
-import { FirestoreService } from '../../../core/firestore/firestore.service'
+import { VocabularyService } from '../../../feature/vocabulary/vocabulary.service'
 
 @Component({
   selector: 'dic-add-new-word-dialog',
@@ -23,11 +22,11 @@ import { FirestoreService } from '../../../core/firestore/firestore.service'
 export class AddNewWordDialogComponent {
   private readonly wordInputRef = viewChild.required<ElementRef<HTMLInputElement>>('wordInputRef');
   private readonly translationInputRef = viewChild.required<ElementRef<HTMLInputElement>>('translationInputRef');
+  private readonly vocabularyService = inject(VocabularyService);
   protected readonly data = inject<{ inputValue: string }>(DIALOG_DATA);
-  protected readonly firestoreService = inject(FirestoreService);
 
   protected addNewWord() {
-    this.firestoreService.addWordToList({
+    this.vocabularyService.addWordToList({
       word: this.wordInputRef().nativeElement.value,
       translation: this.translationInputRef().nativeElement.value,
     }).subscribe(() => {

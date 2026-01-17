@@ -1,9 +1,7 @@
-import { RedirectCommand, Router, Routes } from '@angular/router';
+import { Router, Routes } from '@angular/router';
 import { inject } from '@angular/core'
 import { AuthService } from './core/auth/auth.service'
 import { map, take } from 'rxjs'
-import { ImportWordsComponent } from './pages/import-words/import-words.component'
-import { FirestoreService } from './core/firestore/firestore.service'
 function authGuard(redirectPath: string) {
   return () => {
     const router = inject(Router);

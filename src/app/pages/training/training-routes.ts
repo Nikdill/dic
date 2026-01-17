@@ -1,7 +1,8 @@
 import { RedirectCommand, Router, Routes } from '@angular/router'
-import { FirestoreService } from '../../core/firestore/firestore.service'
 import { inject } from '@angular/core'
 import { map } from 'rxjs'
+import { RepetitionService } from '../../feature/training/repetition/repetition.service'
+import { WordTranslationService } from '../../feature/training/word-translation/word-translation.service'
 
 export const TRAINING_ROUTES: Routes = [
   {
@@ -14,9 +15,24 @@ export const TRAINING_ROUTES: Routes = [
     resolve: {
       words: () => {
         const command = new RedirectCommand(inject(Router).parseUrl("/"));
-        return inject(FirestoreService).getWordsForRepetition().pipe(
+        return inject(RepetitionService).getWords().pipe(
           map(list => {
-            return list.length < 10 ? command : list
+            return list.length < 1 ? command : list
+          })
+        )
+      }
+    },
+    runGuardsAndResolvers: 'always'
+  },
+  {
+    path: 'word-translation',
+    loadComponent: () => import('./word-translation/word-translation.component').then(m => m.WordTranslationComponent),
+    resolve: {
+      words: () => {
+        const command = new RedirectCommand(inject(Router).parseUrl("/"));
+        return inject(WordTranslationService).getWords().pipe(
+          map(list => {
+            return list.length < 1 ? command : list
           })
         )
       }
