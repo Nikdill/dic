@@ -140,7 +140,7 @@ export class RepetitionComponent {
         return correctIds.length + incorrectIds.length === listLength
       }),
       switchMap(({ correctIds, incorrectIds }) => {
-        return this.repetitionService.updateRepetitionWords({
+        return this.repetitionService.updateWords({
           correct: correctIds,
           incorrect: incorrectIds
         })

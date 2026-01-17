@@ -4,7 +4,7 @@ import { NavigationComponent } from './shared/navigation/navigation.component'
 
 @Component({
   selector: 'dic-root',
-  imports: [RouterOutlet, NavigationComponent],
+  imports: [RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

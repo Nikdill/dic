@@ -34,7 +34,12 @@ export const StatusType = {
 export type StatusType = typeof StatusType[keyof typeof StatusType]
 
 export class Status {
-  private statusValue: number;
+  private readonly statusValue: number;
+
+  get value() {
+    return this.statusValue as StatusType;
+  }
+
   // Показать права в двоичном виде (для отладки)
   get binary() {
     return this.statusValue.toString(2).padStart(4, '0');
@@ -45,7 +50,7 @@ export class Status {
   }
 
   get done() {
-    return Object.values(StatusType).every(this.hasStatus.bind(this))
+    return Object.values(StatusType).every(status => Status.hasStatus(this.value, status))
   }
 
   get inProgress() {
@@ -57,19 +62,18 @@ export class Status {
   }
 
   // Добавить право
-  addStatus(status: StatusType) {
-    this.statusValue = this.statusValue | status;  // Побитовое ИЛИ
-    return this;
+  static addStatus(value: StatusType, status: StatusType) {// Побитовое ИЛИ
+    return value | status;
   }
 
   // Удалить право
-  removeStatus(status: StatusType) {
-    this.statusValue = this.statusValue & ~status; // Побитовое И с инверсией
-    return this;
+  static removeStatus(value: StatusType,status: StatusType) {
+    // Побитовое И с инверсией
+    return value & ~status;
   }
 
   // Проверить наличие права
-  hasStatus(status: StatusType) {
-    return (this.statusValue & status) === status;
+  static hasStatus(value: StatusType, status: StatusType) {
+    return (value & status) === status;
   }
 }

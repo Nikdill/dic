@@ -34,7 +34,7 @@ export class RepetitionService {
     )
   }
 
-  updateRepetitionWords(args: { correct: string[]; incorrect: string[]}) {
+  updateWords(args: { correct: string[]; incorrect: string[]}) {
     return this.authService.auth$.pipe(
       take(1),
       switchMap(
