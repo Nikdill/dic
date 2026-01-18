@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core'
-import firebase from 'firebase/compat/app'
 import { AuthService } from '../../core/auth/auth.service'
 import { Router } from '@angular/router'
 

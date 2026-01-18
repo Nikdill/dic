@@ -1,16 +1,16 @@
-import { ChangeDetectionStrategy, Component, ElementRef, inject, signal, viewChild } from '@angular/core'
+import { ChangeDetectionStrategy, Component, DOCUMENT, ElementRef, inject, signal, viewChild } from '@angular/core'
 import { AsyncPipe, NgTemplateOutlet } from '@angular/common'
 import { MatIcon } from '@angular/material/icon'
 import { TimerComponent } from '../repetition/timer/timer.component'
 import {
   asyncScheduler,
-  BehaviorSubject,
+  BehaviorSubject, distinctUntilChanged,
   endWith,
-  filter,
-  map,
-  shareReplay,
+  filter, fromEvent,
+  map, merge, NEVER, of, ReplaySubject,
+  shareReplay, Subject,
   switchMap,
-  take,
+  take, takeUntil,
   takeWhile,
   tap,
 } from 'rxjs'
@@ -35,12 +35,44 @@ import { ListeningService } from '../../../feature/training/listening/listening.
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListeningComponent {
-  private readonly wordInputRef = viewChild<ElementRef<HTMLInputElement>>('wordInputRef')
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly listeningService = inject(ListeningService);
   private readonly router = inject(Router);
   private readonly playSound = PlaySoundFactory();
   private readonly voice = inject(Voice);
+  private readonly documentRef = inject(DOCUMENT);
+  protected readonly focusSubject = new Subject<void>();
+
+  protected readonly visualViewportHeight$ = this.focusSubject.pipe(
+      switchMap(() => {
+        return this.documentRef.defaultView?.visualViewport
+          ? fromEvent(this.documentRef.defaultView.visualViewport, 'resize')
+            .pipe(
+              map(e => (e.currentTarget as VisualViewport).height),
+              endWith(undefined)
+            )
+          : of(undefined)
+      })
+    ).pipe(
+      shareReplay({ refCount: true, bufferSize: 1})
+    )
+
+  protected readonly top$ = this.focusSubject.pipe(
+    switchMap(() => {
+      return this.documentRef.defaultView?.visualViewport
+        ? fromEvent(this.documentRef.defaultView.visualViewport, 'scroll')
+          .pipe(
+            map(e => {
+               return this.documentRef.defaultView?.scrollY || 0;
+              },
+            ),
+            endWith(undefined)
+          )
+        : of(undefined)
+    })
+  ).pipe(
+    shareReplay({ refCount: true, bufferSize: 1})
+  )
 
   private readonly list$ = this.activatedRoute.data.pipe(
     map(data => data['words'] as RecordType[]),
@@ -84,6 +116,8 @@ export class ListeningComponent {
     shareReplay({ refCount: true, bufferSize: 1})
   )
 
+  protected readonly showInput$ = this.queue$.pipe(map(Boolean), distinctUntilChanged(), shareReplay({ refCount: true, bufferSize: 1}));
+
   protected clickHandler(item: RecordType, inputRef: HTMLInputElement) {
     const value = inputRef.value.trim().toLowerCase();
     if(!value.length) {
@@ -101,18 +135,11 @@ export class ListeningComponent {
       inputRef.value = item.word;
       this.selected.set({ type: 'incorrect' as const, word: item.word, translation: item.translation });
     }
-
+    inputRef.value = '';
+    inputRef.focus();
     asyncScheduler.schedule(() => {
       this.wordCounter$.next(this.wordCounter$.value + 1);
       this.selected.set(undefined);
-      asyncScheduler.schedule(() => {
-        const input = this.wordInputRef()?.nativeElement;
-        if(input) {
-          input.value = '';
-          input.focus();
-        }
-
-      }, 0)
     }, isSuccess ? 1500 : 2000);
 
     this.list$.pipe(

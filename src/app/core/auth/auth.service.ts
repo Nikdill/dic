@@ -18,10 +18,7 @@ export class AuthService {
   async googleSignIn(): Promise<UserCredential> {
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(this.firebaseAuth, provider);
-      // Вы можете получить информацию о пользователе из result.user
-      console.log('User signed in with Google:', result.user);
-      return result;
+      return signInWithPopup(this.firebaseAuth, provider);
     } catch (error) {
       console.error('Error during Google Sign-In:', error);
       throw error;

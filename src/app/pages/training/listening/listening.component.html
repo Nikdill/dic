@@ -1,6 +1,8 @@
 <div
-  class="fixed inset-0 flex items-center justify-center p-4"
+  class="fixed h-full w-full left-0 top-0 flex items-center justify-center p-4"
   [class.bg-neutral-800]="(queue$ | async) === undefined"
+  [style.top.px]="top$ | async"
+  [style.height.px]="visualViewportHeight$ | async"
 >
   @if(queue$ | async; as item) {
     <div
@@ -8,7 +10,6 @@
       [class.border-emerald-500]="selected()?.type === 'correct'"
       [class.border-gray-400]="!selected()"
       class="flex flex-col items-center justify-start gap-4 px-2 py-8 max-w-full w-120 h-80 rounded-xl border">
-
         @if(selected(); as selected) {
           <div
             class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 overflow-hidden"
@@ -42,14 +43,26 @@
           <button type="button" (click)="playHandler(item)" class="flex items-center justify-center w-20 h-20 cursor-pointer text-4xl text-center selected aspect-square rounded-full bg-blue-500 text-white">
             <mat-icon class="scale-200" aria-hidden="false" aria-label=Play>volume_up</mat-icon>
           </button>
-
-          <div class="w-full flex items-center flex-col">
-            <mat-form-field class="w-full max-w-100">
-              <input autofocus matInput #wordInputRef (keydown.enter)="clickHandler(item, wordInputRef)" />
-            </mat-form-field>
-            <button class="p-4 rounded-xl bg-blue-500 text-white text-xl" (click)="clickHandler(item, wordInputRef)">Submit</button>
-          </div>
         }
+
+      @if(showInput$) {
+        <div
+          [class.overflow-hidden]="selected()"
+          [style.width.px]="selected() ? 0 : undefined"
+          [style.height.px]="selected() ? 0 : undefined"
+          class="w-full flex items-center flex-col">
+          <mat-form-field class="w-full max-w-100">
+            <input
+              autofocus
+              matInput
+              #wordInputRef
+              (focus)="focusSubject.next()"
+              (keydown.enter)="clickHandler(item, wordInputRef)"
+            />
+          </mat-form-field>
+          <button class="p-4 rounded-xl bg-blue-500 text-white text-xl" (click)="clickHandler(item, wordInputRef)">Submit</button>
+        </div>
+      }
     </div>
   } @else {
     <div class="w-full flex flex-col gap-4 h-full pb-8">
