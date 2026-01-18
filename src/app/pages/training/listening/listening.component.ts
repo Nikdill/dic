@@ -19,12 +19,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { Voice } from '../../../shared/voice'
 import { MatFormField, MatInput } from '@angular/material/input'
 import { PlaySoundFactory } from '../repetition/play-sound'
-import { WordTranslationService } from '../../../feature/training/word-translation/word-translation.service'
+import { ListeningService } from '../../../feature/training/listening/listening.service'
 
 @Component({
-  selector: 'dic-word-translation',
-  templateUrl: 'word-translation.component.html',
-  styleUrl: 'word-translation.component.scss',
+  selector: 'dic-listening',
+  templateUrl: 'listening.component.html',
+  styleUrl: 'listening.component.scss',
   imports: [
     AsyncPipe,
     MatInput,
@@ -34,10 +34,10 @@ import { WordTranslationService } from '../../../feature/training/word-translati
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WordTranslationComponent {
+export class ListeningComponent {
   private readonly wordInputRef = viewChild<ElementRef<HTMLInputElement>>('wordInputRef')
   private readonly activatedRoute = inject(ActivatedRoute);
-  private readonly wordTranslationService = inject(WordTranslationService);
+  private readonly listeningService = inject(ListeningService);
   private readonly router = inject(Router);
   private readonly playSound = PlaySoundFactory();
   private readonly voice = inject(Voice);
@@ -130,7 +130,7 @@ export class WordTranslationComponent {
         return correctIds.length + incorrectIds.length === list.length
       }),
       switchMap(({ list, correctIds, incorrectIds }) => {
-        return this.wordTranslationService.updateWords({
+        return this.listeningService.updateWords({
           correct: list.filter(item => correctIds.includes(item.id)),
           incorrect: list.filter(item => incorrectIds.includes(item.id)),
         })
@@ -147,6 +147,6 @@ export class WordTranslationComponent {
     this.incorrectAnswersIds.clear();
     this.wordCounter$.next(0);
     this.selected.set(undefined);
-    this.router.navigate(['training', 'word-translation'], { onSameUrlNavigation: 'reload' }).then();
+    this.router.navigate(['training', 'listening'], { onSameUrlNavigation: 'reload' }).then();
   }
 }

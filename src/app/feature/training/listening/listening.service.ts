@@ -8,7 +8,7 @@ import { FIREBASE_FIRE_STORE } from '../../../core/firebase/firebase-app'
 @Injectable({
   providedIn: 'root'
 })
-export class WordTranslationService {
+export class ListeningService {
   private readonly authService = inject(AuthService);
   private readonly firestore = inject(FIREBASE_FIRE_STORE);
 
@@ -24,7 +24,7 @@ export class WordTranslationService {
           return getDocs(query(
             collection(this.firestore, "users", auth.uid, "vocabulary"),
             orderBy('updatedAt'),
-            where('status', '!=', StatusType.WORD_TRANSLATION),
+            where('status', '!=', StatusType.LISTENING),
             limit(10)
           )).then(result => {
 
@@ -49,7 +49,7 @@ export class WordTranslationService {
           args.correct.forEach(item => {
             const docRef = doc(collection(this.firestore, "users", auth.uid, "vocabulary"), item.id);
 
-            batch.update(docRef, { updatedAt, status: Status.addStatus(item.status.value, StatusType.WORD_TRANSLATION) });
+            batch.update(docRef, { updatedAt, status: Status.addStatus(item.status.value, StatusType.LISTENING) });
           });
           args.incorrect.forEach(item => {
             const docRef = doc(collection(this.firestore, "users", auth.uid, "vocabulary"), item.id);

@@ -23,7 +23,7 @@ export class RepetitionService {
             collection(this.firestore, "users", auth.uid, "vocabulary"),
             orderBy('updatedAt'),
             where('status', 'in', Object.values(StatusType)
-              .filter(status => ![StatusType.WORD_TRANSLATION as number].includes(status))),
+              .filter(status => ![StatusType.LISTENING as number].includes(status))),
             limit(60)
           )).then(result => {
 

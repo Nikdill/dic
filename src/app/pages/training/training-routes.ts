@@ -2,7 +2,7 @@ import { RedirectCommand, Router, Routes } from '@angular/router'
 import { inject } from '@angular/core'
 import { map } from 'rxjs'
 import { RepetitionService } from '../../feature/training/repetition/repetition.service'
-import { WordTranslationService } from '../../feature/training/word-translation/word-translation.service'
+import { ListeningService } from '../../feature/training/listening/listening.service'
 
 export const TRAINING_ROUTES: Routes = [
   {
@@ -25,12 +25,12 @@ export const TRAINING_ROUTES: Routes = [
     runGuardsAndResolvers: 'always'
   },
   {
-    path: 'word-translation',
-    loadComponent: () => import('./word-translation/word-translation.component').then(m => m.WordTranslationComponent),
+    path: 'listening',
+    loadComponent: () => import('./listening/listening.component').then(m => m.ListeningComponent),
     resolve: {
       words: () => {
         const command = new RedirectCommand(inject(Router).parseUrl("/"));
-        return inject(WordTranslationService).getWords().pipe(
+        return inject(ListeningService).getWords().pipe(
           map(list => {
             return list.length < 1 ? command : list
           })
