@@ -18,13 +18,13 @@ import { Voice } from '../../../shared/voice'
 import { ListeningService } from '../../../feature/training/listening/listening.service'
 import { PlaySoundFactory } from '../../../shared/play-sound'
 import { WordComponent } from './word/word.component'
+import { WordBuilderService } from '../../../feature/training/word-builder/word-builder.service'
 
 @Component({
   selector: 'dic-word-builder',
   templateUrl: 'word-builder.component.html',
   imports: [
     AsyncPipe,
-    MatIcon,
     RouterLink,
     WordComponent,
   ],
@@ -32,11 +32,9 @@ import { WordComponent } from './word/word.component'
 })
 export class WordBuilderComponent {
   private readonly activatedRoute = inject(ActivatedRoute);
-  private readonly listeningService = inject(ListeningService);
+  private readonly wordBuilderService = inject(WordBuilderService);
   private readonly router = inject(Router);
-  private readonly playSound = PlaySoundFactory();
   private readonly voice = inject(Voice);
-  protected readonly focusSubject = new Subject<void>();
 
 
   private readonly list$ = this.activatedRoute.data.pipe(
@@ -78,19 +76,18 @@ export class WordBuilderComponent {
 
   protected clickHandler(item: RecordType, isSuccess: boolean) {
     if(isSuccess) {
-      this.playSound('/correct.mp3').subscribe();
       this.correctAnswersIds.add(item.id);
       this.selected.set({ type: 'correct' as const, word: item.word, translation: item.translation });
 
     } else {
-      this.playSound('/wrong.mp3').subscribe();
       this.incorrectAnswersIds.add(item.id);
       this.selected.set({ type: 'incorrect' as const, word: item.word, translation: item.translation });
     }
+    this.voice.play(item.word);
     asyncScheduler.schedule(() => {
       this.wordCounter$.next(this.wordCounter$.value + 1);
       this.selected.set(undefined);
-    }, isSuccess ? 1500 : 2000);
+    }, 1000);
 
     this.list$.pipe(
       take(1),
@@ -107,7 +104,7 @@ export class WordBuilderComponent {
         return correctIds.length + incorrectIds.length === list.length
       }),
       switchMap(({ list, correctIds, incorrectIds }) => {
-        return this.listeningService.updateWords({
+        return this.wordBuilderService.updateWords({
           correct: list.filter(item => correctIds.includes(item.id)),
           incorrect: list.filter(item => incorrectIds.includes(item.id)),
         })

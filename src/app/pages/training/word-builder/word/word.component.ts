@@ -5,9 +5,9 @@ import {
   DOCUMENT,
   HostListener,
   inject,
-  input,
+  input, OnChanges,
   output,
-  signal,
+  signal, SimpleChange, SimpleChanges,
 } from '@angular/core'
 import { RecordType } from '../../../../core/word.record'
 import { asyncScheduler, fromEvent } from 'rxjs'
@@ -31,12 +31,14 @@ function mix(value: string[], result: string[] = []): string[] {
   styleUrl: 'word.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'block',
+    class: 'flex flex-col max-w-100 w-full items-center text-white',
     '(window:keydown)': 'globalClick($event)'
   }
 })
-export class WordComponent {
-  private attempts = 4;
+export class WordComponent implements OnChanges {
+  protected attempts = signal(4);
+  protected doneCorrect = signal(false);
+  protected doneIncorrect = signal(false);
   protected readonly mixedWord = computed(() => {
     return mix(this.word().word.split('').map((item, index, array) =>
       item
@@ -54,10 +56,17 @@ export class WordComponent {
   protected readonly correctLetterIndexs = signal<number[]>([]);
 
   protected readonly letters = computed(() => {
-    const mixedWord = this.mixedWord();
+    const mixedWord = this.mixedWord().slice(0);
     const selectedLetters = this.selectedLetters();
 
-    return mixedWord.filter(letter => !selectedLetters.includes(letter))
+    selectedLetters.forEach(letter => {
+      const index = mixedWord.findIndex(mixedLetter => mixedLetter === letter);
+      if(index !== -1) {
+        mixedWord.splice(index, 1);
+      }
+    })
+
+    return mixedWord
   });
 
   protected readonly wordTitle = computed(() => {
@@ -69,29 +78,58 @@ export class WordComponent {
   readonly incorrectChange = output<string>();
   readonly doneChange = output<void>();
 
+  ngOnChanges(changes: SimpleChanges<WordComponent>) {
+    if(changes.word) {
+      this.attempts.set(4);
+      this.selectedLettersSync.set([]);
+      this.doneCorrect.set(false);
+      this.doneIncorrect.set(false);
+      this.selectedLetters.set([]);
+    }
+  }
+
   protected letterClick(letter: string, index: number) {
+    if(this.attempts() === 0) {
+      return
+    }
+
     const newLetters = this.selectedLettersSync().concat(letter);
     const isCorrect = this.word().word.trim().toLowerCase().startsWith(newLetters.join(''));
     if(isCorrect) {
       this.selectedLettersSync.set(newLetters);
       this.correctLetterIndexs.update(indexes => indexes.concat(index));
+      const isDone = newLetters.length === this.mixedWord().length;
+      if(isDone) {
+        this.attempts.set(0);
+      }
       asyncScheduler.schedule(() => {
-        if(newLetters.length === this.mixedWord().length) {
+        if(isDone) {
           this.doneChange.emit();
+          this.doneCorrect.set(true);
         }
         this.correctChange.emit(letter);
         this.correctLetterIndexs.set([]);
         this.selectedLetters.set(newLetters);
-      }, 500);
+      }, 300);
     } else {
-      this.incorrectLetterIndexs.update(indexes => indexes.concat(index));;
-      this.attempts--;
+
+      this.incorrectLetterIndexs.update(indexes => indexes.concat(index));
+
+      this.attempts.update(attempts => attempts - 1);
+
+      const isDone = this.attempts() === 0;
+
+      if(isDone) {
+        this.doneIncorrect.set(true);
+        this.selectedLettersSync.set(this.word().word.trim().split(''));
+      }
+
       asyncScheduler.schedule(() => {
-        if(this.attempts <= 0) {
+        if(isDone) {
           this.incorrectChange.emit(letter);
         }
         this.incorrectLetterIndexs.set([]);
-      }, 500);
+      }, 300);
     }
   }
 

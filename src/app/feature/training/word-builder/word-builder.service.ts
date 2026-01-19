@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core'
 import { Observable, of, switchMap, take } from 'rxjs'
-import { mapDoc, RecordType, RecordTypeRaw, StatusType } from '../../../core/word.record'
-import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore'
+import { mapDoc, RecordType, RecordTypeRaw, Status, StatusType } from '../../../core/word.record'
+import { collection, doc, getDocs, limit, orderBy, query, where, writeBatch } from 'firebase/firestore'
 import { AuthService } from '../../../core/auth/auth.service'
 import { FIREBASE_FIRE_STORE } from '../../../core/firebase/firebase-app'
 
@@ -30,6 +30,33 @@ export class WordBuilderService {
           )).then(result => {
             return result.docs.map(doc => mapDoc({ ...doc.data() as RecordTypeRaw, id: doc.id }))
           })
+        }
+      )
+    )
+  }
+
+  updateWords(args: { incorrect: RecordType[]; correct: RecordType[]}) {
+    return this.authService.auth$.pipe(
+      take(1),
+      switchMap(
+        auth => {
+          if(!auth) {
+            return of(undefined);
+          }
+
+          const batch = writeBatch(this.firestore);
+          const updatedAt = Date.now();
+          args.correct.forEach(item => {
+            const docRef = doc(collection(this.firestore, "users", auth.uid, "vocabulary"), item.id);
+
+            batch.update(docRef, { updatedAt, status: Status.addStatus(item.status.value, StatusType.WORD_BUILDER) });
+          });
+          args.incorrect.forEach(item => {
+            const docRef = doc(collection(this.firestore, "users", auth.uid, "vocabulary"), item.id);
+
+            batch.update(docRef, { updatedAt });
+          });
+          return batch.commit();
         }
       )
     )

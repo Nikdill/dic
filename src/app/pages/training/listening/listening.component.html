@@ -1,68 +1,66 @@
 <div
-  class="fixed h-full w-full left-0 top-0 flex items-center justify-center p-4"
-  [class.bg-neutral-800]="(queue$ | async) === undefined"
+  class="fixed h-full w-full left-0 top-0 flex items-center justify-center p-4 bg-gray-800"
   [style.top.px]="top$ | async"
   [style.height.px]="visualViewportHeight$ | async"
 >
   @if(queue$ | async; as item) {
-    <div
-      [class.border-rose-600]="selected()?.type === 'incorrect'"
-      [class.border-emerald-500]="selected()?.type === 'correct'"
-      [class.border-gray-400]="!selected()"
-      class="flex flex-col items-center justify-start gap-4 px-2 py-8 max-w-full w-120 h-80 rounded-xl border">
-        @if(selected(); as selected) {
+    <div class="flex flex-col w-full items-center justify-between h-full max-h-100">
+      <div
+        class="flex flex-col items-center justify-start gap-4">
           <div
             class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 overflow-hidden"
-            [class.bg-emerald-500]="selected.type === 'correct'"
-            [class.border-emerald-500]="selected.type === 'correct'"
-            [class.border-rose-600]="selected.type === 'incorrect'"
-            [class.border-white]="!selected"
-            [class.text-white]="!selected || selected.type === 'correct'"
-            [class.text-rose-600]="selected.type === 'incorrect'"
+            [class.bg-emerald-500]="selected()?.type === 'correct'"
+            [class.border-emerald-500]="selected()?.type === 'correct'"
+            [class.border-rose-400]="selected()?.type === 'incorrect'"
+            [class.border-transparent]="!selected()"
+            [class.text-white]="!selected() || selected()?.type === 'correct'"
+            [class.text-rose-400]="selected()?.type === 'incorrect'"
           >
-            @switch (selected.type) {
+            @switch (selected()?.type) {
               @case ('correct') {
                 <mat-icon class="scale-200" aria-hidden="false" aria-label=Correct>done</mat-icon>
               }
               @case ('incorrect') {
                 <mat-icon  class="scale-200" aria-hidden="false" aria-label=Incorrect>clear</mat-icon>
               }
+              @default {
+                <button
+                  type="button"
+                  (click)="playHandler(item)"
+                  class="flex items-center justify-center w-20 aspect-square cursor-pointer text-4xl rounded-full bg-blue-500 text-white">
+                  <mat-icon class="scale-200" aria-hidden="false" aria-label=Play>volume_up</mat-icon>
+                </button>
+              }
             }
           </div>
-            <div class="mt-8 flex flex-col items-center">
-              <div
-                class="text-4xl"
-                [class.text-rose-600]="selected.type === 'incorrect'"
-                [class.text-emerald-500]="selected.type === 'correct'"
-              >{{ selected.word }}</div>
-              <div class="text-xl mt-2">
-                {{ selected.translation }}
-              </div>
+          <div class="mt-4 flex flex-col items-center text-center">
+            <div
+              class="text-2xl line-clamp"
+              [class.text-rose-400]="selected()?.type === 'incorrect'"
+              [class.text-emerald-500]="selected()?.type === 'correct'"
+            >{{ selected()?.word || '&nbsp;' }}</div>
+            <div class="text-lg text-white mt-2 line-clamp">
+              {{ selected()?.translation || '&nbsp;' }}
             </div>
-        }@else {
-          <button type="button" (click)="playHandler(item)" class="flex items-center justify-center w-20 h-20 cursor-pointer text-4xl text-center aspect-square rounded-full bg-blue-500 text-white">
-            <mat-icon class="scale-200" aria-hidden="false" aria-label=Play>volume_up</mat-icon>
-          </button>
-        }
-
-      @if(showInput$) {
+          </div>
+      </div>
+      <div class="w-full max-w-80  border-b-3 border-b-gray-700">
         <div
-          [class.overflow-hidden]="selected()"
-          [style.width.px]="selected() ? 0 : undefined"
-          [style.height.px]="selected() ? 0 : undefined"
-          class="w-full flex items-center flex-col">
-          <mat-form-field class="w-full max-w-100">
-            <input
-              autofocus
-              matInput
-              #wordInputRef
-              (focus)="focusSubject.next()"
-              (keydown.enter)="clickHandler(item, wordInputRef)"
-            />
-          </mat-form-field>
-          <button class="p-4 rounded-xl bg-blue-500 text-white text-xl" (click)="clickHandler(item, wordInputRef)">Submit</button>
-        </div>
-      }
+          autofocus
+          #wordInputRef
+          type="text"
+          contenteditable
+          (focus)="focusSubject.next()"
+          (keydown.enter)="clickHandler(item, wordInputRef)"
+          class="w-full max-h-20 text-white text-xl outline-none resize-none overflow-y-auto"
+        ></div>
+      </div>
+      <button
+        class="w-full max-w-80 rounded-sm text-white bg-blue-500 p-2 text-md cursor-pointer"
+        (click)="clickHandler(item, wordInputRef)"
+      >
+        Check
+      </button>
     </div>
   } @else {
     <div class="w-full flex flex-col gap-4 h-full pb-8">
@@ -88,13 +86,13 @@
       <div class="flex flex-col gap-2 w-full items-center">
         <button
           (click)="replay()"
-          class="w-full max-w-100 grow rounded-sm bg-blue-500 text-white p-2 text-xl cursor-pointer"
+          class="w-full max-w-100 grow rounded-sm bg-blue-500 text-white p-2 text-md cursor-pointer"
         >
           Continue the training
         </button>
         <button
           routerLink="/training"
-          class="w-full max-w-100 rounded-sm text-white border border-blue-500 text-blue-500 p-2 text-xl cursor-pointer"
+          class="w-full max-w-100 rounded-sm text-white border border-blue-500 text-blue-500 p-2 text-md cursor-pointer"
         >
           Exit
         </button>

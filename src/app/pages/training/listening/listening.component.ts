@@ -3,7 +3,7 @@ import { AsyncPipe } from '@angular/common'
 import { MatIcon } from '@angular/material/icon'
 import {
   asyncScheduler,
-  BehaviorSubject, distinctUntilChanged,
+  BehaviorSubject,
   endWith,
   filter, fromEvent,
   map,
@@ -17,7 +17,6 @@ import {
 import { RecordType } from '../../../core/word.record'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { Voice } from '../../../shared/voice'
-import { MatFormField, MatInput } from '@angular/material/input'
 import { ListeningService } from '../../../feature/training/listening/listening.service'
 import { PlaySoundFactory } from '../../../shared/play-sound'
 
@@ -26,8 +25,6 @@ import { PlaySoundFactory } from '../../../shared/play-sound'
   templateUrl: 'listening.component.html',
   imports: [
     AsyncPipe,
-    MatInput,
-    MatFormField,
     MatIcon,
     RouterLink,
   ],
@@ -97,7 +94,12 @@ export class ListeningComponent {
   protected readonly correctAnswersIds = new Set<string>();
   protected readonly incorrectAnswersIds = new Set<string>();
   protected readonly wordCounter$ = new BehaviorSubject(0);
-  protected readonly selected = signal<{  type: 'correct' | 'incorrect', word: string; translation: string } | undefined>(undefined);
+  protected readonly selected = signal<{
+    type: 'correct' | 'incorrect';
+    word: string;
+    translation: string
+  } | undefined
+  >({ type: 'correct', word: 'very long word with a lot letters', translation: 'очень длинное слово с большим количеством букв'});
 
   protected readonly queue$ = this.list$.pipe(
     switchMap(list => {
@@ -115,14 +117,13 @@ export class ListeningComponent {
     shareReplay({ refCount: true, bufferSize: 1})
   )
 
-  protected readonly showInput$ = this.queue$.pipe(map(Boolean), distinctUntilChanged(), shareReplay({ refCount: true, bufferSize: 1}));
 
-  protected clickHandler(item: RecordType, inputRef: HTMLInputElement) {
-    const value = inputRef.value.trim().toLowerCase();
+  protected clickHandler(item: RecordType, inputRef: HTMLDivElement) {
+    const value = inputRef.innerText.trim().toLowerCase();
     if(!value.length) {
       return
     }
-    const isSuccess = item.word.trim().toLowerCase() === inputRef.value.trim().toLowerCase();
+    const isSuccess = item.word.trim().toLowerCase() === inputRef.innerText.trim().toLowerCase();
     if(isSuccess) {
       this.playSound('/correct.mp3').subscribe();
       this.correctAnswersIds.add(item.id);
@@ -131,10 +132,10 @@ export class ListeningComponent {
     } else {
       this.playSound('/wrong.mp3').subscribe();
       this.incorrectAnswersIds.add(item.id);
-      inputRef.value = item.word;
+      inputRef.innerText = item.word;
       this.selected.set({ type: 'incorrect' as const, word: item.word, translation: item.translation });
     }
-    inputRef.value = '';
+    inputRef.innerText = '';
     inputRef.focus();
     asyncScheduler.schedule(() => {
       this.wordCounter$.next(this.wordCounter$.value + 1);

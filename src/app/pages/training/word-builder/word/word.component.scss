@@ -15,10 +15,14 @@
 }
 
 .incorrect {
-  --border-color: var(--color-rose-600);
+  --border-color: var(--color-rose-400);
   animation: blink linear 0.2s forwards;
 }
 .correct {
   --border-color: var(--color-emerald-500);
   animation: blink linear 0.2s forwards;
+}
+
+.title {
+  transition: color 0.2s linear;
 }
