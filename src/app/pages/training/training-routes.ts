@@ -3,6 +3,7 @@ import { inject } from '@angular/core'
 import { map } from 'rxjs'
 import { RepetitionService } from '../../feature/training/repetition/repetition.service'
 import { ListeningService } from '../../feature/training/listening/listening.service'
+import { WordBuilderService } from '../../feature/training/word-builder/word-builder.service'
 
 export const TRAINING_ROUTES: Routes = [
   {
@@ -31,6 +32,21 @@ export const TRAINING_ROUTES: Routes = [
       words: () => {
         const command = new RedirectCommand(inject(Router).parseUrl("/"));
         return inject(ListeningService).getWords().pipe(
+          map(list => {
+            return list.length < 1 ? command : list
+          })
+        )
+      }
+    },
+    runGuardsAndResolvers: 'always'
+  },
+  {
+    path: 'word-builder',
+    loadComponent: () => import('./word-builder/word-builder.component').then(m => m.WordBuilderComponent),
+    resolve: {
+      words: () => {
+        const command = new RedirectCommand(inject(Router).parseUrl("/"));
+        return inject(WordBuilderService).getWords().pipe(
           map(list => {
             return list.length < 1 ? command : list
           })

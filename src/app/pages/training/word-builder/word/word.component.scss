@@ -1,0 +1,24 @@
+
+@keyframes blink {
+  0% {
+    border-color: transparent;
+  }
+  33% {
+    border-color: var(--border-color);
+  }
+  66% {
+    border-color: transparent;
+  }
+  100% {
+    border-color: var(--border-color);
+  }
+}
+
+.incorrect {
+  --border-color: var(--color-rose-600);
+  animation: blink linear 0.2s forwards;
+}
+.correct {
+  --border-color: var(--color-emerald-500);
+  animation: blink linear 0.2s forwards;
+}

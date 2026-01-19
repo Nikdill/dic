@@ -1,0 +1,90 @@
+<div
+  class="fixed h-full w-full left-0 top-0 flex items-center justify-center p-4"
+  [class.bg-neutral-800]="(queue$ | async) === undefined"
+>
+  @if(queue$ | async; as item) {
+    <div
+      [class.border-rose-600]="selected()?.type === 'incorrect'"
+      [class.border-emerald-500]="selected()?.type === 'correct'"
+      [class.border-gray-400]="!selected()"
+      class="flex flex-col items-center justify-start gap-4 px-2 py-8 max-w-full w-120 h-80 rounded-xl border">
+      @if(selected(); as selected) {
+        <div
+          class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 overflow-hidden"
+          [class.bg-emerald-500]="selected.type === 'correct'"
+          [class.border-emerald-500]="selected.type === 'correct'"
+          [class.border-rose-600]="selected.type === 'incorrect'"
+          [class.border-white]="!selected"
+          [class.text-white]="!selected || selected.type === 'correct'"
+          [class.text-rose-600]="selected.type === 'incorrect'"
+        >
+          @switch (selected.type) {
+            @case ('correct') {
+              <mat-icon class="scale-200" aria-hidden="false" aria-label=Correct>done</mat-icon>
+            }
+            @case ('incorrect') {
+              <mat-icon  class="scale-200" aria-hidden="false" aria-label=Incorrect>clear</mat-icon>
+            }
+          }
+        </div>
+        <div class="mt-8 flex flex-col items-center">
+          <div
+            class="text-2xl"
+            [class.text-rose-600]="selected.type === 'incorrect'"
+            [class.text-emerald-500]="selected.type === 'correct'"
+          >{{ selected.word }}</div>
+          <div class="text-xl mt-2">
+            {{ selected.translation }}
+          </div>
+        </div>
+      }@else {
+        <div class="text-2xl">
+          {{ item.translation }}
+        </div>
+
+        <dic-word
+          [word]="item"
+          (incorrectChange)="clickHandler(item, false)"
+          (doneChange)="clickHandler(item, true)"
+        />
+      }
+    </div>
+  } @else {
+    <div class="w-full flex flex-col gap-4 h-full pb-8">
+      <ul class="flex flex-col gap-4 w-full overflow-auto max-w-200 m-auto text-xl pe-2">
+        @for(item of resultList$ | async; track item.id) {
+          <li class="flex items-center justify-between gap-4">
+            <div class="flex flex-col">
+              <div class="text-blue-600">
+                {{ item.word }}
+              </div>
+              <div class="text-white">
+                {{ item.translation }}
+              </div>
+            </div>
+            <div
+              class="rounded-full w-4 h-4 shrink-0"
+              [class.bg-yellow-200]="item.status.inProgress"
+              [class.bg-green-300]="item.status.done"
+            >&nbsp;</div>
+          </li>
+        }
+      </ul>
+      <div class="flex flex-col gap-2 w-full items-center">
+        <button
+          (click)="replay()"
+          class="w-full max-w-100 grow rounded-sm bg-blue-500 text-white p-2 text-xl cursor-pointer"
+        >
+          Continue the training
+        </button>
+        <button
+          routerLink="/training"
+          class="w-full max-w-100 rounded-sm text-white border border-blue-500 text-blue-500 p-2 text-xl cursor-pointer"
+        >
+          Exit
+        </button>
+      </div>
+    </div>
+  }
+
+</div>

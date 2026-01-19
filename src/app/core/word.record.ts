@@ -29,6 +29,7 @@ export function mapDoc(doc: RecordTypeRaw & { id: string }) {
 export const StatusType = {
   NEW:   0,
   LISTENING:  1,
+  WORD_BUILDER:  2,
 } as const;
 
 export type StatusType = typeof StatusType[keyof typeof StatusType]

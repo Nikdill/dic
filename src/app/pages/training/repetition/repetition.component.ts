@@ -8,13 +8,13 @@ import {
   tap,
 } from 'rxjs'
 import { AsyncPipe } from '@angular/common'
-import { PlaySoundFactory } from './play-sound'
 import { MatIcon } from '@angular/material/icon'
 import { TimerComponent } from './timer/timer.component'
 import { Voice } from '../../../shared/voice'
 import { ActivatedRoute, Router } from '@angular/router'
 import { RepetitionService } from '../../../feature/training/repetition/repetition.service'
 import { RecordType } from '../../../core/word.record'
+import { PlaySoundFactory } from '../../../shared/play-sound'
 
 type WordItemType = {
   id: string;

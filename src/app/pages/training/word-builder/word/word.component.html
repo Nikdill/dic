@@ -1,0 +1,13 @@
+<div class="px-10 border-b-2 text-2xl border-b-gray-400 mb-6 text-center">
+  {{ wordTitle() || '&nbsp;' }}
+</div>
+
+<div class="w-full flex flex-wrap gap-2 justify-center">
+  @for (letter of letters(); track letter; let index = $index) {
+    <button
+      [class.incorrect]="incorrectLetterIndexs().includes(index)"
+      [class.correct]="correctLetterIndexs().includes(index)"
+      class="flex items-center justify-center w-8 h-8 text-xl border border-gray-500 rounded-md"
+      (click)="letterClick(letter, index)">{{letter}}</button>
+  }
+</div>

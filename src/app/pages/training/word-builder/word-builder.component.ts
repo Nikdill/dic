@@ -1,77 +1,43 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, inject, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core'
 import { AsyncPipe } from '@angular/common'
 import { MatIcon } from '@angular/material/icon'
 import {
   asyncScheduler,
-  BehaviorSubject, distinctUntilChanged,
+  BehaviorSubject,
   endWith,
-  filter, fromEvent,
+  filter,
   map,
-  of,
   shareReplay, Subject,
   switchMap,
   take,
   takeWhile,
-  tap,
 } from 'rxjs'
 import { RecordType } from '../../../core/word.record'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { Voice } from '../../../shared/voice'
-import { MatFormField, MatInput } from '@angular/material/input'
 import { ListeningService } from '../../../feature/training/listening/listening.service'
 import { PlaySoundFactory } from '../../../shared/play-sound'
+import { WordComponent } from './word/word.component'
 
 @Component({
-  selector: 'dic-listening',
-  templateUrl: 'listening.component.html',
+  selector: 'dic-word-builder',
+  templateUrl: 'word-builder.component.html',
   imports: [
     AsyncPipe,
-    MatInput,
-    MatFormField,
     MatIcon,
     RouterLink,
+    WordComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ListeningComponent {
+export class WordBuilderComponent {
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly listeningService = inject(ListeningService);
   private readonly router = inject(Router);
   private readonly playSound = PlaySoundFactory();
   private readonly voice = inject(Voice);
-  private readonly documentRef = inject(DOCUMENT);
   protected readonly focusSubject = new Subject<void>();
 
-  protected readonly visualViewportHeight$ = this.focusSubject.pipe(
-      switchMap(() => {
-        return this.documentRef.defaultView?.visualViewport
-          ? fromEvent(this.documentRef.defaultView.visualViewport, 'resize')
-            .pipe(
-              map(e => (e.currentTarget as VisualViewport).height),
-              endWith(undefined)
-            )
-          : of(undefined)
-      })
-    ).pipe(
-      shareReplay({ refCount: true, bufferSize: 1})
-    )
-
-  protected readonly top$ = this.focusSubject.pipe(
-    switchMap(() => {
-      return this.documentRef.defaultView?.visualViewport
-        ? fromEvent(this.documentRef.defaultView.visualViewport, 'scroll')
-          .pipe(
-            map(e => {
-               return this.documentRef.defaultView?.scrollY || 0;
-              },
-            ),
-            endWith(undefined)
-          )
-        : of(undefined)
-    })
-  ).pipe(
-    shareReplay({ refCount: true, bufferSize: 1})
-  )
 
   private readonly list$ = this.activatedRoute.data.pipe(
     map(data => data['words'] as RecordType[]),
@@ -107,22 +73,10 @@ export class ListeningComponent {
         endWith(undefined)
       )
     }),
-    tap(item => {
-      if(item) {
-        this.voice.play(item.word);
-      }
-    }),
     shareReplay({ refCount: true, bufferSize: 1})
   )
 
-  protected readonly showInput$ = this.queue$.pipe(map(Boolean), distinctUntilChanged(), shareReplay({ refCount: true, bufferSize: 1}));
-
-  protected clickHandler(item: RecordType, inputRef: HTMLInputElement) {
-    const value = inputRef.value.trim().toLowerCase();
-    if(!value.length) {
-      return
-    }
-    const isSuccess = item.word.trim().toLowerCase() === inputRef.value.trim().toLowerCase();
+  protected clickHandler(item: RecordType, isSuccess: boolean) {
     if(isSuccess) {
       this.playSound('/correct.mp3').subscribe();
       this.correctAnswersIds.add(item.id);
@@ -131,11 +85,8 @@ export class ListeningComponent {
     } else {
       this.playSound('/wrong.mp3').subscribe();
       this.incorrectAnswersIds.add(item.id);
-      inputRef.value = item.word;
       this.selected.set({ type: 'incorrect' as const, word: item.word, translation: item.translation });
     }
-    inputRef.value = '';
-    inputRef.focus();
     asyncScheduler.schedule(() => {
       this.wordCounter$.next(this.wordCounter$.value + 1);
       this.selected.set(undefined);
@@ -173,6 +124,6 @@ export class ListeningComponent {
     this.incorrectAnswersIds.clear();
     this.wordCounter$.next(0);
     this.selected.set(undefined);
-    this.router.navigate(['training', 'listening'], { onSameUrlNavigation: 'reload' }).then();
+    this.router.navigate(['training', 'word-builder'], { onSameUrlNavigation: 'reload' }).then();
   }
 }
