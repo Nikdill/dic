@@ -108,7 +108,22 @@ export class WordComponent implements OnChanges {
 
       if(isDone) {
         this.doneIncorrect.set(true);
-        this.selectedLetterIndexesSync.set(this.mixedWord().map((_, index) => index));
+        const { indexes } = this.word().word.trim().toLowerCase().split('').reduce<{mixedWord: string[]; indexes: number[]}>(({mixedWord, indexes}, letter) => {
+          const index = mixedWord.findIndex((item, index) => item === letter && !indexes.includes(index));
+          if(index !== -1) {
+            indexes.push(index)
+          }
+
+          return {
+            mixedWord,
+            indexes
+          }
+        }, {
+          mixedWord: this.mixedWord().slice(0),
+          indexes: [],
+        })
+
+        this.selectedLetterIndexesSync.set(indexes);
       }
 
       asyncScheduler.schedule(() => {
