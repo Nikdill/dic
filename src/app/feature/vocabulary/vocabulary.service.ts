@@ -131,7 +131,7 @@ export class VocabularyService {
       console.error(e);
       return of(null)
     }),
-    shareReplay(1)
+    shareReplay({ bufferSize: 1, refCount: true })
   )
 
   nextPage() {
@@ -165,6 +165,7 @@ export class VocabularyService {
 
         return this.searchWords({ uid: auth.uid, word: params.word }).then(foundWords => {
           const foundWord = foundWords.pop();
+          const updatedAt = Date.now();
           let result = {
             word: params.word,
             translations: [params.translation],
@@ -178,12 +179,12 @@ export class VocabularyService {
           if(foundWord) {
             return updateDoc(
               doc(collection(this.firestore, "users", auth.uid, "vocabulary"), foundWord.id),
-              { translations: foundWord.translations.concat(params.translation) }
+              { translations: foundWord.translations.concat(params.translation), updatedAt }
             );
           } else {
             return setDoc(
               doc(collection(this.firestore, "users", auth.uid, "vocabulary")),
-              {...result, createdAt: result.createdAt }
+              {...result, createdAt: result.createdAt, updatedAt }
             );
           }
         }).then(() => {

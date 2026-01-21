@@ -7,13 +7,13 @@
 
 <div class="h-66">
   <div class="grid grid-cols-5 gap-4">
-    @for (letter of mixedWord(); track letter; let index = $index) {
+    @for (letter of mixedWord(); track letter + index; let index = $index) {
       <button
         [class.incorrect]="incorrectLetterIndexs().includes(index)"
         [class.correct]="correctLetterIndexs().includes(index)"
         [class.invisible]="selectedLetterIndexes().includes(index)"
         class="w-10 h-10 text-xl border border-gray-500 rounded-xl"
-        (click)="letterClick(letter, index)">{{letter}}</button>
+        (click)="letterClick(index)">{{letter}}</button>
     }
   </div>
 </div>

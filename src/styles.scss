@@ -8,8 +8,6 @@
 @use 'tailwindcss';
 
 html, body {
-  touch-action: none;
-  -ms-touch-action: none;
   overscroll-behavior: none;
 }
 

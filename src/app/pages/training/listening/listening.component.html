@@ -50,6 +50,7 @@
           type="text"
           contenteditable
           (focus)="focusSubject.next()"
+          (touchmove)="$event.preventDefault();$event.stopPropagation()"
           (keydown.enter)="enterHandler($event, item, wordInputRef)"
           [class.text-rose-400]="selected()?.type === 'incorrect'"
           [class.text-emerald-500]="selected()?.type === 'correct'"

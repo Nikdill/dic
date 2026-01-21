@@ -15,6 +15,8 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { RepetitionService } from '../../../feature/training/repetition/repetition.service'
 import { WordType } from '../../../core/word.record'
 import { PlaySoundFactory } from '../../../shared/play-sound'
+import { ResultsListComponent } from '../../../shared/results-list/results-list.component'
+import { WordStatusComponent } from '../../../shared/word-status/word-status.component'
 
 type WordItemType = {
   id: string;
@@ -32,6 +34,8 @@ type WordItemType = {
     AsyncPipe,
     MatIcon,
     TimerComponent,
+    ResultsListComponent,
+    WordStatusComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -46,6 +50,22 @@ export class RepetitionComponent {
     map(list => list || []),
     shareReplay({ refCount: true, bufferSize: 1})
   );
+
+  protected readonly resultList$ = this.list$.pipe(
+    map(list => {
+      const half = Math.floor(list.length / 2);
+      return list.slice(0, half).map(item => {
+        return {
+          ...item,
+          status: {
+            inProgress: this.incorrectAnswersIds.has(item.id),
+            new: false,
+            done: !this.incorrectAnswersIds.has(item.id)
+          }
+        }
+      })
+    })
+  )
 
   protected readonly wordCounter$ = new BehaviorSubject(0);
   protected readonly wordLeftCounter$ = this.wordCounter$.pipe(
@@ -104,6 +124,9 @@ export class RepetitionComponent {
   )
 
   protected selectVariant(item: WordItemType, variant: WordItemType['variants'][number]) {
+    if(this.selected()) {
+      return;
+    }
     this.selected.set(variant);
     asyncScheduler.schedule(() => {
       this.wordCounter$.next(this.wordCounter$.value + 1);
@@ -155,6 +178,10 @@ export class RepetitionComponent {
     this.wordCounter$.next(0);
     this.selected.set(undefined);
     this.timeEnded.set(false);
-    this.router.navigate(['training'], { onSameUrlNavigation: 'reload' }).then();
+    this.router.navigate(['training', 'repetition'], { onSameUrlNavigation: 'reload' }).then();
+  }
+
+  protected exit() {
+    this.router.navigate(['training']).then();
   }
 }

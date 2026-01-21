@@ -41,13 +41,21 @@ export class WordBuilderComponent {
   private readonly incorrectWords = new BehaviorSubject<WordType[]>([]);
 
 
-  private readonly list$ = this.activatedRoute.data.pipe(
+  private readonly words$ = this.activatedRoute.data.pipe(
     map(data => data['words'] as WordType[]),
     map(list => list || []),
     shareReplay({ refCount: true, bufferSize: 1})
   );
 
-  protected readonly resultList$ = this.list$.pipe(
+  private readonly list$ = combineLatest({
+    list: this.words$,
+    incorrectWords: this.incorrectWords
+  }).pipe(
+    map(({ list, incorrectWords }) => list.concat(incorrectWords)),
+    shareReplay({ refCount: true, bufferSize: 1 })
+  )
+
+  protected readonly resultList$ = this.words$.pipe(
     map(list => {
       return list.map(item => {
         return {
@@ -55,23 +63,18 @@ export class WordBuilderComponent {
           status: {
             inProgress: this.incorrectAnswersIds.has(item.id),
             new: false,
-            done: this.correctAnswersIds.has(item.id)
+            done: !this.incorrectAnswersIds.has(item.id)
           }
         }
       })
     })
   )
 
-  protected readonly correctAnswersIds = new Set<string>();
   protected readonly incorrectAnswersIds = new Set<string>();
   protected readonly wordCounter$ = new BehaviorSubject(0);
   protected readonly selected = signal<{  type: 'correct' | 'incorrect', word: string; translation: string } | undefined>(undefined);
 
-  protected readonly queue$ = combineLatest({
-      list: this.list$,
-      incorrectWords: this.incorrectWords
-    }).pipe(
-      map(({ list, incorrectWords }) => list.concat(incorrectWords)),
+  protected readonly queue$ = this.list$.pipe(
     switchMap(list => {
       return this.wordCounter$.pipe(
         map(counter => list.at(counter)),
@@ -82,37 +85,34 @@ export class WordBuilderComponent {
     shareReplay({ refCount: true, bufferSize: 1})
   )
 
-  protected clickHandler(item: WordType, isSuccess: boolean) {
-    if(isSuccess) {
-      this.correctAnswersIds.add(item.id);
-      this.selected.set({ type: 'correct' as const, word: item.word, translation: item.translation });
-
-    } else {
+  protected clickHandler(item: WordType, args: { type: 'correct' | 'incorrect' | 'mistake' }) {
+    if(args.type === 'mistake') {
       this.incorrectAnswersIds.add(item.id);
-      this.incorrectWords.next(this.incorrectWords.value.concat(item));
-      this.selected.set({ type: 'incorrect' as const, word: item.word, translation: item.translation });
+      this.selected.set({ type: 'correct' as const, word: item.word, translation: item.translation });
     }
+    if(args.type === 'incorrect') {
+      this.incorrectAnswersIds.add(item.id);
+      this.selected.set({ type: 'incorrect' as const, word: item.word, translation: item.translation });
+      this.incorrectWords.next(this.incorrectWords.value.concat({...item}));
+    }
+    if(args.type === 'correct') {
+      this.selected.set({ type: 'correct' as const, word: item.word, translation: item.translation });
+    }
+
     this.voice.play(item.word);
     asyncScheduler.schedule(() => {
       this.wordCounter$.next(this.wordCounter$.value + 1);
       this.selected.set(undefined);
-    }, isSuccess ? 1500 : 3000);
+    }, args.type === 'incorrect' ? 3000 : 1500);
 
     this.list$.pipe(
       take(1),
-      map(list => {
-        const correctIds = Array.from(this.correctAnswersIds);
+      filter(list => {
+        return list.length === this.wordCounter$.value + 1;
+      }),
+      switchMap(list => {
         const incorrectIds = Array.from(this.incorrectAnswersIds);
-        return {
-          list,
-          correctIds,
-          incorrectIds,
-        }
-      }),
-      filter(({ list, correctIds }) => {
-        return correctIds.length === list.length
-      }),
-      switchMap(({ list, incorrectIds }) => {
+
         return this.wordBuilderService.updateWords({
           correct: list.filter(item => !incorrectIds.includes(item.id)),
           incorrect: list.filter(item => incorrectIds.includes(item.id)),
@@ -122,7 +122,6 @@ export class WordBuilderComponent {
   }
 
   protected replay() {
-    this.correctAnswersIds.clear();
     this.incorrectAnswersIds.clear();
     this.wordCounter$.next(0);
     this.selected.set(undefined);

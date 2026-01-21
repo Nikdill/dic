@@ -2,22 +2,25 @@ import {
   ChangeDetectionStrategy,
   Component,
   DOCUMENT,
-  effect,
   ElementRef,
-  inject,
+  inject, OnDestroy, Renderer2,
   signal,
   viewChild,
+  ViewEncapsulation,
 } from '@angular/core'
 import { AsyncPipe } from '@angular/common'
 import { MatIcon } from '@angular/material/icon'
 import {
   asyncScheduler,
-  BehaviorSubject, combineLatest,
+  BehaviorSubject,
+  combineLatest,
   endWith,
-  filter, fromEvent,
+  filter,
+  fromEvent,
   map,
   of,
-  shareReplay, Subject,
+  shareReplay,
+  Subject,
   switchMap,
   take,
   takeWhile,
@@ -43,16 +46,17 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '(click)': 'wordInputRef()?.nativeElement?.focus()'
+    '(click)': 'wordInputRef()?.nativeElement?.focus()',
   }
 })
-export class ListeningComponent {
+export class ListeningComponent implements OnDestroy {
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly listeningService = inject(ListeningService);
   private readonly router = inject(Router);
   private readonly playSound = PlaySoundFactory();
   private readonly voice = inject(Voice);
   private readonly documentRef = inject(DOCUMENT);
+  private readonly renderer2 = inject(Renderer2);
   protected readonly wordInputRef = viewChild<ElementRef<HTMLDivElement>>('wordInputRef');
   protected readonly focusSubject = new Subject<void>();
   private readonly incorrectWords = new BehaviorSubject<WordType[]>([]);
@@ -88,11 +92,20 @@ export class ListeningComponent {
     shareReplay({ refCount: true, bufferSize: 1})
   )
 
-  private readonly list$ = this.activatedRoute.data.pipe(
+  private readonly words$ = this.activatedRoute.data.pipe(
     map(data => data['words'] as WordType[]),
     map(list => list || []),
     shareReplay({ refCount: true, bufferSize: 1})
   );
+
+  private readonly list$ = combineLatest({
+    words: this.words$,
+    incorrectWords: this.incorrectWords
+  })
+    .pipe(
+      map(({ words, incorrectWords }) => words.concat(incorrectWords)),
+      shareReplay({ refCount: true, bufferSize: 1})
+    )
 
   protected readonly resultList$ = this.list$.pipe(
     map(list => {
@@ -102,14 +115,13 @@ export class ListeningComponent {
           status: {
             inProgress: this.incorrectAnswersIds.has(item.id),
             new: false,
-            done: this.correctAnswersIds.has(item.id)
+            done: !this.incorrectAnswersIds.has(item.id)
           }
         }
       })
     })
   )
 
-  protected readonly correctAnswersIds = new Set<string>();
   protected readonly incorrectAnswersIds = new Set<string>();
   protected readonly wordCounter$ = new BehaviorSubject(0);
   protected readonly selected = signal<{
@@ -119,12 +131,8 @@ export class ListeningComponent {
   } | undefined
   >(undefined);
 
-  protected readonly queue$ = combineLatest({
-                                  list: this.list$,
-                                  incorrectWords: this.incorrectWords
-                              })
+  protected readonly queue$ = this.list$
   .pipe(
-    map(({ list, incorrectWords }) => list.concat(incorrectWords)),
     switchMap(list => {
       return this.wordCounter$.pipe(
         map(counter => list.at(counter)),
@@ -146,11 +154,25 @@ export class ListeningComponent {
     if(!visualViewport) {
       return;
     }
+
+    this.renderer2.setStyle(this.documentRef.documentElement, 'touch-action', 'none')
+    this.renderer2.setStyle(this.documentRef.documentElement, '-ms-touch-action', 'none')
+
+    this.renderer2.setStyle(this.documentRef.body, 'touch-action', 'none')
+    this.renderer2.setStyle(this.documentRef.body, '-ms-touch-action', 'none')
+
     fromEvent(visualViewport, 'scroll').pipe(
       takeUntilDestroyed()
     ).subscribe(() => {
       this.documentRef.defaultView?.scrollTo(0, 0);
     })
+  }
+
+  ngOnDestroy() {
+    this.renderer2.removeStyle(this.documentRef.documentElement, 'touch-action')
+    this.renderer2.removeStyle(this.documentRef.documentElement, '-ms-touch-action')
+    this.renderer2.removeStyle(this.documentRef.body, 'touch-action')
+    this.renderer2.removeStyle(this.documentRef.body, '-ms-touch-action')
   }
 
   protected enterHandler($event: Event, item: WordType, inputRef: HTMLDivElement) {
@@ -159,6 +181,9 @@ export class ListeningComponent {
   }
 
   protected clickHandler(item: WordType, inputRef: HTMLDivElement) {
+    if(this.selected()) {
+      return
+    }
     const value = inputRef.innerText.trim().toLowerCase();
 
     if(!value.length) {
@@ -167,14 +192,13 @@ export class ListeningComponent {
     const isSuccess = item.word.trim().toLowerCase() === inputRef.innerText.trim().toLowerCase();
     if(isSuccess) {
       this.playSound('/correct.mp3').subscribe();
-      this.correctAnswersIds.add(item.id);
       this.selected.set({ type: 'correct' as const, word: item.word, translation: item.translation });
 
     } else {
       this.playSound('/wrong.mp3').subscribe();
       this.incorrectAnswersIds.add(item.id);
       this.selected.set({ type: 'incorrect' as const, word: item.word, translation: item.translation });
-      this.incorrectWords.next(this.incorrectWords.value.concat(item));
+      this.incorrectWords.next(this.incorrectWords.value.concat({ ...item }));
     }
 
     inputRef.focus();
@@ -186,19 +210,11 @@ export class ListeningComponent {
 
     this.list$.pipe(
       take(1),
-      map(list => {
-        const correctIds = Array.from(this.correctAnswersIds);
+      filter(list => {
+        return list.length === this.wordCounter$.value + 1
+      }),
+      switchMap(list => {
         const incorrectIds = Array.from(this.incorrectAnswersIds);
-        return {
-          list,
-          correctIds,
-          incorrectIds,
-        }
-      }),
-      filter(({ list, correctIds, incorrectIds }) => {
-        return correctIds.length === list.length
-      }),
-      switchMap(({ list, incorrectIds }) => {
         return this.listeningService.updateWords({
           correct: list.filter(item => !incorrectIds.includes(item.id)),
           incorrect: list.filter(item => incorrectIds.includes(item.id)),
@@ -212,7 +228,6 @@ export class ListeningComponent {
   }
 
   protected replay() {
-    this.correctAnswersIds.clear();
     this.incorrectAnswersIds.clear();
     this.wordCounter$.next(0);
     this.selected.set(undefined);

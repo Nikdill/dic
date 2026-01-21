@@ -24,7 +24,8 @@ export class ListeningService {
           return getDocs(query(
             collection(this.firestore, "users", auth.uid, "vocabulary"),
             orderBy('updatedAt'),
-            where('status', '!=', StatusType.LISTENING),
+            where('status', 'in', Object.values(StatusType)
+              .filter(status => ![StatusType.LISTENING as number].includes(status))),
             limit(10)
           )).then(result => {
 

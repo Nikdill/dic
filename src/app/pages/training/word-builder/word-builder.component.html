@@ -13,8 +13,7 @@
         </div>
         <dic-word
           [word]="item"
-          (incorrectChange)="clickHandler(item, false)"
-          (doneChange)="clickHandler(item, true)"
+          (doneChange)="clickHandler(item, $event)"
         />
       </div>
     </div>

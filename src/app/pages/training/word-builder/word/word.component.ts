@@ -61,9 +61,7 @@ export class WordComponent implements OnChanges {
   })
 
   readonly word = input.required<WordType>();
-  readonly correctChange = output<string>();
-  readonly incorrectChange = output<string>();
-  readonly doneChange = output<void>();
+  readonly doneChange = output<{ type: 'correct' | 'incorrect' | 'mistake' }>();
 
   ngOnChanges(changes: SimpleChanges<WordComponent>) {
     if(changes.word) {
@@ -75,39 +73,28 @@ export class WordComponent implements OnChanges {
     }
   }
 
-  protected letterClick(letter: string, index: number) {
+  protected letterClick(index: number) {
     if(this.attempts() === 0) {
       return
     }
     const newLetterIndexes = this.selectedLetterIndexesSync().concat(index);
     const newLetters = newLetterIndexes.map(index => this.mixedWord()[index]).filter(Boolean);
     const isCorrect = this.word().word.trim().toLowerCase().startsWith(newLetters.join(''));
+    if(!isCorrect) {
+      this.attempts.update(attemptsState => attemptsState - 1);
+    }
+    const isDone = isCorrect ? newLetterIndexes.length === this.mixedWord().length : this.attempts() === 0;
+    const attempts = this.attempts();
+
     if(isCorrect) {
       this.selectedLetterIndexesSync.set(newLetterIndexes);
       this.correctLetterIndexs.update(indexes => indexes.concat(index));
-      const isDone = newLetterIndexes.length === this.mixedWord().length;
       if(isDone) {
         this.attempts.set(0);
       }
-      asyncScheduler.schedule(() => {
-        if(isDone) {
-          this.doneChange.emit();
-          this.doneCorrect.set(true);
-        }
-        this.correctChange.emit(letter);
-        this.correctLetterIndexs.set([]);
-        this.selectedLetterIndexes.update(indexes => indexes.concat(index));
-      }, 200);
     } else {
-
       this.incorrectLetterIndexs.update(indexes => indexes.concat(index));
-
-      this.attempts.update(attempts => attempts - 1);
-
-      const isDone = this.attempts() === 0;
-
       if(isDone) {
-        this.doneIncorrect.set(true);
         const { indexes } = this.word().word.trim().toLowerCase().split('').reduce<{mixedWord: string[]; indexes: number[]}>(({mixedWord, indexes}, letter) => {
           const index = mixedWord.findIndex((item, index) => item === letter && !indexes.includes(index));
           if(index !== -1) {
@@ -125,14 +112,34 @@ export class WordComponent implements OnChanges {
 
         this.selectedLetterIndexesSync.set(indexes);
       }
-
-      asyncScheduler.schedule(() => {
-        if(isDone) {
-          this.incorrectChange.emit(letter);
-        }
-        this.incorrectLetterIndexs.set([]);
-      }, 200);
     }
+
+    asyncScheduler.schedule(() => {
+      if(isCorrect) {
+        this.correctLetterIndexs.set([]);
+        this.selectedLetterIndexes.update(indexes => indexes.concat(index));
+      } else {
+        this.incorrectLetterIndexs.set([]);
+      }
+      if(isDone) {
+        let type: 'incorrect' | 'mistake' | 'correct';
+        if(attempts === 4) {
+          type = 'correct' as const;
+        } else if(attempts === 0) {
+          type = 'incorrect' as const;
+        } else {
+          type = 'mistake' as const;;
+        }
+
+        this.doneChange.emit({
+          type,
+        });
+        this.doneCorrect.set(type === 'correct' || type === 'mistake');
+        this.doneIncorrect.set(type === 'incorrect');
+      }
+    }, 200);
+
+
   }
 
   protected globalClick(event: KeyboardEvent) {
@@ -143,7 +150,7 @@ export class WordComponent implements OnChanges {
         (letter, index) => letter === key && !this.selectedLetterIndexesSync().includes(index)
       );
     if(index !== -1) {
-      this.letterClick(key, index);
+      this.letterClick(index);
     }
   }
 }

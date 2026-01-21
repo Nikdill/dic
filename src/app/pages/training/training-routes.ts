@@ -48,7 +48,7 @@ export const TRAINING_ROUTES: Routes = [
         const command = new RedirectCommand(inject(Router).parseUrl("/"));
         return inject(WordBuilderService).getWords().pipe(
           map(list => {
-            return list.length < 1 ? command : list
+            return list.length < 1 ? command : list.slice(0,2)
           })
         )
       }

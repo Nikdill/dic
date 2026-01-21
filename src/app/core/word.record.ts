@@ -61,7 +61,7 @@ export class Status {
   static map(value: number): WordStatus {
     const  statusNew = value === 0;
     const statusDone = Object.values(StatusType).every(status => Status.hasStatus(value as StatusType, status));
-    const statusInProgress = !(statusNew && statusDone);
+    const statusInProgress = !statusNew && !statusDone;
     return {
       new: statusNew,
       done: statusDone,

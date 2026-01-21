@@ -1,6 +1,9 @@
-<div class="fixed inset-0 flex items-center justify-center bg-emerald-500 p-4">
-  <div class="flex flex-col items-center gap-12 w-full">
-    @if(queue$ | async; as item) {
+<div
+  class="fixed inset-0 flex items-center justify-center"
+  [class.bg-emerald-500]="(queue$ | async) !== undefined"
+>
+  @if(queue$ | async; as item) {
+    <div class="flex flex-col items-center gap-12 w-full p-4">
       <div class="flex flex-col gap-2 items-center justify-center text-4xl">
         @if(selected(); as selected) {
           <div
@@ -65,32 +68,27 @@
           </button>
         }
       </div>
-    } @else {
-      <div class="flex flex-col justify-center items-center gap-4">
-        <div class="flex gap-4 text-4xl items-center">
-          <div class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 border-emerald-700 bg-emerald-700 text-white overflow-hidden">
-            <mat-icon class="scale-200" aria-hidden="false" aria-label=Correct>done</mat-icon>
-          </div>
-          <div class="text-white">
-            {{ correctAnswersIds.size }}
-          </div>
-        </div>
-        <div class="flex gap-4 text-4xl items-center">
-          <div class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 border-rose-600 text-rose-600 overflow-hidden">
-            <mat-icon  class="scale-200" aria-hidden="false" aria-label=Incorrect>clear</mat-icon>
-          </div>
-          <div class="text-white">
-            {{ incorrectAnswersIds.size }}
-          </div>
-        </div>
-        <div>
-          <button type=button (click)="replay()" class="text-white w-20 h-20">
-            <mat-icon class="scale-200" aria-hidden="false" aria-label=Replay>replay</mat-icon>
-          </button>
-        </div>
-      </div>
-    }
-    <div>
     </div>
-  </div>
+  }@else {
+    @if(resultList$ | async; as list) {
+      <ng-template #titleTemplate let-item="item">
+        {{ item.word }}
+      </ng-template>
+      <ng-template #subTitleTemplate let-item="item">
+        {{ item.translation }}
+      </ng-template>
+      <ng-template #liRightTemplateContent let-item="item">
+        <dic-word-status [status]="item.status"/>
+      </ng-template>
+      <dic-results-list
+        class="bg-gray-800 p-4"
+        [list]="list"
+        [titleTemplate]="titleTemplate"
+        [subTitleTemplate]="subTitleTemplate"
+        [liRightContentTemplate]="liRightTemplateContent"
+        (replayChange)="replay()"
+        (exitChange)="exit()"
+      />
+    }
+  }
 </div>
