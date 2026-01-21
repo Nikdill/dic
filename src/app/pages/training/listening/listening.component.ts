@@ -1,9 +1,18 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, inject, signal } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DOCUMENT,
+  effect,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core'
 import { AsyncPipe } from '@angular/common'
 import { MatIcon } from '@angular/material/icon'
 import {
   asyncScheduler,
-  BehaviorSubject,
+  BehaviorSubject, combineLatest,
   endWith,
   filter, fromEvent,
   map,
@@ -14,11 +23,13 @@ import {
   takeWhile,
   tap,
 } from 'rxjs'
-import { RecordType } from '../../../core/word.record'
-import { ActivatedRoute, Router, RouterLink } from '@angular/router'
+import { WordType } from '../../../core/word.record'
+import { ActivatedRoute, Router } from '@angular/router'
 import { Voice } from '../../../shared/voice'
 import { ListeningService } from '../../../feature/training/listening/listening.service'
 import { PlaySoundFactory } from '../../../shared/play-sound'
+import { ResultsListComponent } from '../../../shared/results-list/results-list.component'
+import { WordStatusComponent } from '../../../shared/word-status/word-status.component'
 
 @Component({
   selector: 'dic-listening',
@@ -26,9 +37,13 @@ import { PlaySoundFactory } from '../../../shared/play-sound'
   imports: [
     AsyncPipe,
     MatIcon,
-    RouterLink,
+    ResultsListComponent,
+    WordStatusComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(click)': 'wordInputRef()?.nativeElement?.focus()'
+  }
 })
 export class ListeningComponent {
   private readonly activatedRoute = inject(ActivatedRoute);
@@ -37,7 +52,9 @@ export class ListeningComponent {
   private readonly playSound = PlaySoundFactory();
   private readonly voice = inject(Voice);
   private readonly documentRef = inject(DOCUMENT);
+  protected readonly wordInputRef = viewChild<ElementRef<HTMLDivElement>>('wordInputRef');
   protected readonly focusSubject = new Subject<void>();
+  private readonly incorrectWords = new BehaviorSubject<WordType[]>([]);
 
   protected readonly visualViewportHeight$ = this.focusSubject.pipe(
       switchMap(() => {
@@ -71,7 +88,7 @@ export class ListeningComponent {
   )
 
   private readonly list$ = this.activatedRoute.data.pipe(
-    map(data => data['words'] as RecordType[]),
+    map(data => data['words'] as WordType[]),
     map(list => list || []),
     shareReplay({ refCount: true, bufferSize: 1})
   );
@@ -99,9 +116,14 @@ export class ListeningComponent {
     word: string;
     translation: string
   } | undefined
-  >({ type: 'correct', word: 'very long word with a lot letters', translation: 'очень длинное слово с большим количеством букв'});
+  >(undefined);
 
-  protected readonly queue$ = this.list$.pipe(
+  protected readonly queue$ = combineLatest({
+                                  list: this.list$,
+                                  incorrectWords: this.incorrectWords
+                              })
+  .pipe(
+    map(({ list, incorrectWords }) => list.concat(incorrectWords)),
     switchMap(list => {
       return this.wordCounter$.pipe(
         map(counter => list.at(counter)),
@@ -117,9 +139,14 @@ export class ListeningComponent {
     shareReplay({ refCount: true, bufferSize: 1})
   )
 
+  protected enterHandler($event: Event, item: WordType, inputRef: HTMLDivElement) {
+    $event.preventDefault();
+    return this.clickHandler(item, inputRef);
+  }
 
-  protected clickHandler(item: RecordType, inputRef: HTMLDivElement) {
+  protected clickHandler(item: WordType, inputRef: HTMLDivElement) {
     const value = inputRef.innerText.trim().toLowerCase();
+
     if(!value.length) {
       return
     }
@@ -134,13 +161,14 @@ export class ListeningComponent {
       this.incorrectAnswersIds.add(item.id);
       inputRef.innerText = item.word;
       this.selected.set({ type: 'incorrect' as const, word: item.word, translation: item.translation });
+      this.incorrectWords.next(this.incorrectWords.value.concat(item));
     }
     inputRef.innerText = '';
     inputRef.focus();
     asyncScheduler.schedule(() => {
       this.wordCounter$.next(this.wordCounter$.value + 1);
       this.selected.set(undefined);
-    }, isSuccess ? 1500 : 2000);
+    }, isSuccess ? 1500 : 3000);
 
     this.list$.pipe(
       take(1),
@@ -154,18 +182,18 @@ export class ListeningComponent {
         }
       }),
       filter(({ list, correctIds, incorrectIds }) => {
-        return correctIds.length + incorrectIds.length === list.length
+        return correctIds.length === list.length
       }),
-      switchMap(({ list, correctIds, incorrectIds }) => {
+      switchMap(({ list, incorrectIds }) => {
         return this.listeningService.updateWords({
-          correct: list.filter(item => correctIds.includes(item.id)),
+          correct: list.filter(item => !incorrectIds.includes(item.id)),
           incorrect: list.filter(item => incorrectIds.includes(item.id)),
         })
       })
     ).subscribe()
   }
 
-  protected playHandler(item: RecordType) {
+  protected playHandler(item: WordType) {
     this.voice.play(item.word);
   }
 
@@ -175,5 +203,9 @@ export class ListeningComponent {
     this.wordCounter$.next(0);
     this.selected.set(undefined);
     this.router.navigate(['training', 'listening'], { onSameUrlNavigation: 'reload' }).then();
+  }
+
+  protected exit() {
+    this.router.navigate(['training']).then();
   }
 }

@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core'
 import { Observable, of, switchMap, take } from 'rxjs'
-import { mapDoc, RecordType, RecordTypeRaw, Status, StatusType } from '../../../core/word.record'
+import { mapDoc, WordType, WordTypeRaw, Status, StatusType } from '../../../core/word.record'
 import { collection, doc, getDocs, limit, orderBy, query, where, writeBatch } from 'firebase/firestore'
 import { AuthService } from '../../../core/auth/auth.service'
 import { FIREBASE_FIRE_STORE } from '../../../core/firebase/firebase-app'
@@ -12,7 +12,7 @@ export class ListeningService {
   private readonly authService = inject(AuthService);
   private readonly firestore = inject(FIREBASE_FIRE_STORE);
 
-  getWords(): Observable<RecordType[]> {
+  getWords(): Observable<WordType[]> {
     return this.authService.auth$.pipe(
       take(1),
       switchMap(
@@ -28,14 +28,14 @@ export class ListeningService {
             limit(10)
           )).then(result => {
 
-            return result.docs.map(doc => mapDoc({ ...doc.data() as RecordTypeRaw, id: doc.id }))
+            return result.docs.map(doc => mapDoc({ ...doc.data() as WordTypeRaw, id: doc.id }))
           })
         }
       )
     )
   }
 
-  updateWords(args: { incorrect: RecordType[]; correct: RecordType[]}) {
+  updateWords(args: { incorrect: WordType[]; correct: WordType[]}) {
     return this.authService.auth$.pipe(
       take(1),
       switchMap(

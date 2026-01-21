@@ -9,7 +9,7 @@ import {
   output,
   signal, SimpleChange, SimpleChanges,
 } from '@angular/core'
-import { RecordType } from '../../../../core/word.record'
+import { WordType } from '../../../../core/word.record'
 import { asyncScheduler, fromEvent } from 'rxjs'
 
 function mix(value: string[], result: string[] = []): string[] {
@@ -50,30 +50,17 @@ export class WordComponent implements OnChanges {
 
     ))
   });
-  protected readonly selectedLetters = signal<string[]>([]);
-  protected readonly selectedLettersSync = signal<string[]>([]);
+  protected readonly selectedLetterIndexes = signal<number[]>([]);
+  protected readonly selectedLetterIndexesSync = signal<number[]>([]);
   protected readonly incorrectLetterIndexs = signal<number[]>([]);
   protected readonly correctLetterIndexs = signal<number[]>([]);
 
-  protected readonly letters = computed(() => {
-    const mixedWord = this.mixedWord().slice(0);
-    const selectedLetters = this.selectedLetters();
-
-    selectedLetters.forEach(letter => {
-      const index = mixedWord.findIndex(mixedLetter => mixedLetter === letter);
-      if(index !== -1) {
-        mixedWord.splice(index, 1);
-      }
-    })
-
-    return mixedWord
-  });
-
   protected readonly wordTitle = computed(() => {
-    return this.selectedLettersSync().join('');
+    const mixedWord = this.mixedWord();
+    return this.selectedLetterIndexesSync().map(index => mixedWord[index]).join('');
   })
 
-  readonly word = input.required<RecordType>();
+  readonly word = input.required<WordType>();
   readonly correctChange = output<string>();
   readonly incorrectChange = output<string>();
   readonly doneChange = output<void>();
@@ -81,10 +68,10 @@ export class WordComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges<WordComponent>) {
     if(changes.word) {
       this.attempts.set(4);
-      this.selectedLettersSync.set([]);
+      this.selectedLetterIndexesSync.set([]);
       this.doneCorrect.set(false);
       this.doneIncorrect.set(false);
-      this.selectedLetters.set([]);
+      this.selectedLetterIndexes.set([]);
     }
   }
 
@@ -92,13 +79,13 @@ export class WordComponent implements OnChanges {
     if(this.attempts() === 0) {
       return
     }
-
-    const newLetters = this.selectedLettersSync().concat(letter);
+    const newLetterIndexes = this.selectedLetterIndexesSync().concat(index);
+    const newLetters = newLetterIndexes.map(index => this.mixedWord()[index]).filter(Boolean);
     const isCorrect = this.word().word.trim().toLowerCase().startsWith(newLetters.join(''));
     if(isCorrect) {
-      this.selectedLettersSync.set(newLetters);
+      this.selectedLetterIndexesSync.set(newLetterIndexes);
       this.correctLetterIndexs.update(indexes => indexes.concat(index));
-      const isDone = newLetters.length === this.mixedWord().length;
+      const isDone = newLetterIndexes.length === this.mixedWord().length;
       if(isDone) {
         this.attempts.set(0);
       }
@@ -109,8 +96,8 @@ export class WordComponent implements OnChanges {
         }
         this.correctChange.emit(letter);
         this.correctLetterIndexs.set([]);
-        this.selectedLetters.set(newLetters);
-      }, 300);
+        this.selectedLetterIndexes.update(indexes => indexes.concat(index));
+      }, 200);
     } else {
 
       this.incorrectLetterIndexs.update(indexes => indexes.concat(index));
@@ -121,7 +108,7 @@ export class WordComponent implements OnChanges {
 
       if(isDone) {
         this.doneIncorrect.set(true);
-        this.selectedLettersSync.set(this.word().word.trim().split(''));
+        this.selectedLetterIndexesSync.set(this.word().word.trim().split('').map((_, index) => index));
       }
 
       asyncScheduler.schedule(() => {
@@ -129,13 +116,17 @@ export class WordComponent implements OnChanges {
           this.incorrectChange.emit(letter);
         }
         this.incorrectLetterIndexs.set([]);
-      }, 300);
+      }, 200);
     }
   }
 
   protected globalClick(event: KeyboardEvent) {
     const key = event.key.toLowerCase();
-    const index = this.letters().findIndex(letter => letter === key);
+
+    const index = this.mixedWord()
+      .findIndex(
+        (letter, index) => letter === key && !this.selectedLetterIndexesSync().includes(index)
+      );
     if(index !== -1) {
       this.letterClick(key, index);
     }

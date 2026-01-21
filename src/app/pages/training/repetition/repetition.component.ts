@@ -13,7 +13,7 @@ import { TimerComponent } from './timer/timer.component'
 import { Voice } from '../../../shared/voice'
 import { ActivatedRoute, Router } from '@angular/router'
 import { RepetitionService } from '../../../feature/training/repetition/repetition.service'
-import { RecordType } from '../../../core/word.record'
+import { WordType } from '../../../core/word.record'
 import { PlaySoundFactory } from '../../../shared/play-sound'
 
 type WordItemType = {
@@ -42,7 +42,7 @@ export class RepetitionComponent {
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly list$ = this.activatedRoute.data.pipe(
-    map(data => data['words'] as RecordType[]),
+    map(data => data['words'] as WordType[]),
     map(list => list || []),
     shareReplay({ refCount: true, bufferSize: 1})
   );

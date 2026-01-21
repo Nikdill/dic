@@ -7,6 +7,12 @@
 @use '@angular/material' as mat;
 @use 'tailwindcss';
 
+html, body {
+  touch-action: none;
+  -ms-touch-action: none;
+  overscroll-behavior: none;
+}
+
 html {
   height: 100%;
   overflow-y: scroll;
@@ -38,9 +44,3 @@ body {
   height: 100%;
 }
 /* You can add global styles to this file, and also import other style files */
-.line-clamp {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-  overflow: hidden;
-}

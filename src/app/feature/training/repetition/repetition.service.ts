@@ -3,14 +3,14 @@ import { Observable, of, switchMap, take } from 'rxjs'
 import { collection, doc, getDocs, limit, orderBy, query, where, writeBatch } from 'firebase/firestore'
 import { AuthService } from '../../../core/auth/auth.service'
 import { FIREBASE_FIRE_STORE } from '../../../core/firebase/firebase-app'
-import { mapDoc, RecordType, RecordTypeRaw, StatusType } from '../../../core/word.record'
+import { mapDoc, WordType, WordTypeRaw, StatusType } from '../../../core/word.record'
 
 @Injectable({ providedIn: 'root' })
 export class RepetitionService {
   private readonly authService = inject(AuthService);
   private readonly firestore = inject(FIREBASE_FIRE_STORE);
 
-  getWords(): Observable<RecordType[]> {
+  getWords(): Observable<WordType[]> {
     return this.authService.auth$.pipe(
       take(1),
       switchMap(
@@ -27,7 +27,7 @@ export class RepetitionService {
             limit(60)
           )).then(result => {
 
-            return result.docs.map(doc => mapDoc({ ...doc.data() as RecordTypeRaw, id: doc.id }))
+            return result.docs.map(doc => mapDoc({ ...doc.data() as WordTypeRaw, id: doc.id }))
           })
         }
       )

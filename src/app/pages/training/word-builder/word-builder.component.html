@@ -1,7 +1,7 @@
-<div class="fixed w-full h-full left-0 top-0 flex justify-center p-4 bg-gray-800">
+<div class="fixed w-full h-full left-0 top-0 flex justify-center items-center p-4 bg-gray-800">
   @if(queue$ | async; as item) {
-    <div class="flex w-full flex-col gap-4 pt-10 items-center">
-      <h4 class="text-base text-white mb-4 line-clamp">Build a word from the letters</h4>
+    <div class="flex w-full flex-col gap-4 items-center">
+      <h4 class="text-base text-white mb-4 line-clamp-1">Build a word from the letters</h4>
       <div class="flex flex-col items-center gap-4 h-full w-full max-w-64">
         <div
           [class.bg-rose-200]="selected()?.type === 'incorrect'"
@@ -9,7 +9,7 @@
           [class.bg-orange-100]="!selected()"
           class="flex text-2xl text-center w-full aspect-square transition-colors items-center justify-center rounded-xl px-2">
 
-            {{ item.translation }}
+          <div class="line-clamp-5 wrap-anywhere">{{ item.translation }}</div>
         </div>
         <dic-word
           [word]="item"
@@ -19,41 +19,25 @@
       </div>
     </div>
   } @else {
-    <div class="w-full flex flex-col gap-4 h-full pb-8">
-      <ul class="flex flex-col gap-4 w-full overflow-auto max-w-200 m-auto text-xl pe-2">
-        @for(item of resultList$ | async; track item.id) {
-          <li class="flex items-center justify-between gap-4">
-            <div class="flex flex-col">
-              <div class="text-blue-600">
-                {{ item.word }}
-              </div>
-              <div class="text-white">
-                {{ item.translation }}
-              </div>
-            </div>
-            <div
-              class="rounded-full w-4 h-4 shrink-0"
-              [class.bg-yellow-200]="item.status.inProgress"
-              [class.bg-green-300]="item.status.done"
-            >&nbsp;</div>
-          </li>
-        }
-      </ul>
-      <div class="flex flex-col gap-2 w-full items-center">
-        <button
-          (click)="replay()"
-          class="w-full max-w-100 grow rounded-sm bg-blue-500 text-white p-2 text-xl cursor-pointer"
-        >
-          Continue the training
-        </button>
-        <button
-          routerLink="/training"
-          class="w-full max-w-100 rounded-sm text-white border border-blue-500 text-blue-500 p-2 text-xl cursor-pointer"
-        >
-          Exit
-        </button>
-      </div>
-    </div>
+    @if(resultList$ | async; as list) {
+      <ng-template #titleTemplate let-item="item">
+        {{ item.word }}
+      </ng-template>
+      <ng-template #subTitleTemplate let-item="item">
+        {{ item.translation }}
+      </ng-template>
+      <ng-template #liRightTemplateContent let-item="item">
+        <dic-word-status [status]="item.status"/>
+      </ng-template>
+      <dic-results-list
+        [list]="list"
+        [titleTemplate]="titleTemplate"
+        [subTitleTemplate]="subTitleTemplate"
+        [liRightContentTemplate]="liRightTemplateContent"
+        (replayChange)="replay()"
+        (exitChange)="exit()"
+      />
+    }
   }
 
 </div>

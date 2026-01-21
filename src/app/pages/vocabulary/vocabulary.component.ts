@@ -17,6 +17,7 @@ import { DicPlayButtonComponent } from './play-button/dic-play-button.component'
 import { ScrollingModule } from '@angular/cdk/scrolling'
 import { VocabularyService } from '../../feature/vocabulary/vocabulary.service'
 import { NavigationComponent } from '../../shared/navigation/navigation.component'
+import { WordStatusComponent } from '../../shared/word-status/word-status.component'
 
 @Component({
   selector: 'dic-vocabulary',
@@ -37,6 +38,7 @@ import { NavigationComponent } from '../../shared/navigation/navigation.componen
     MatIcon,
     MatActionList,
     NavigationComponent,
+    WordStatusComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

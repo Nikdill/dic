@@ -1,16 +1,17 @@
 <div
   [class.text-rose-200]="doneIncorrect()"
   [class.text-emerald-100]="doneCorrect()"
-  class="w-full title mx-auto border-b-3 text-2xl border-b-gray-700 mb-8 text-center">
+  class="w-full title mx-auto border-b-3 text-2xl border-b-gray-700 mb-8 text-center line-clamp-1">
   {{ wordTitle() || '&nbsp;' }}
 </div>
 
-<div class="w-full flex flex-wrap gap-2 justify-center">
-  @for (letter of letters(); track letter; let index = $index) {
+<div class="grid grid-cols-5 gap-4">
+  @for (letter of mixedWord(); track letter; let index = $index) {
     <button
       [class.incorrect]="incorrectLetterIndexs().includes(index)"
       [class.correct]="correctLetterIndexs().includes(index)"
-      class="flex items-center justify-center w-8 h-8 text-xl border border-gray-500 rounded-xl"
+      [class.invisible]="selectedLetterIndexes().includes(index)"
+      class="w-10 h-10 text-xl border border-gray-500 rounded-xl"
       (click)="letterClick(letter, index)">{{letter}}</button>
   }
 </div>

@@ -26,12 +26,7 @@
           <span matListItemTitle>{{item.word}}</span>
           <span matListItemLine>{{item.translation }}</span>
           <span matListItemMeta class="flex items-center">
-            <div
-              class="rounded-full w-4 h-4"
-              [class.bg-gray-200]="item.status.new"
-              [class.bg-yellow-200]="item.status.inProgress"
-              [class.bg-green-300]="item.status.done"
-            >&nbsp;</div>
+          <dic-word-status [status]="item.status"/>
           </span>
         </button>
       }

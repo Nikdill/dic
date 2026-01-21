@@ -24,14 +24,14 @@ import {
   where,
 } from 'firebase/firestore'
 import { FIREBASE_FIRE_STORE } from '../../core/firebase/firebase-app'
-import { mapDoc, RecordType, RecordTypeRaw, StatusType } from '../../core/word.record'
+import { mapDoc, WordType, WordTypeRaw, StatusType } from '../../core/word.record'
 
 @Injectable({
   providedIn: 'root'
 })
 export class VocabularyService {
   private lockNextPage = false;
-  private readonly cache = new Map<string, RecordType[][]>();
+  private readonly cache = new Map<string, WordType[][]>();
   private readonly page = new BehaviorSubject(1);
   private readonly searchValue = new BehaviorSubject('');
 
@@ -74,7 +74,7 @@ export class VocabularyService {
     shareReplay(1)
   );
 
-  readonly listOfWords$ = this.authService.auth$.pipe(
+  readonly listOfWords$: Observable<WordType[] | null> = this.authService.auth$.pipe(
     switchMap(auth => {
       if(!auth) {
         return of(null)
@@ -94,7 +94,7 @@ export class VocabularyService {
             })
           }
 
-          return new Observable<(RecordTypeRaw & { id: string })[]>(
+          return new Observable<(WordTypeRaw & { id: string })[]>(
             subscriber => {
               onSnapshot(
                 query(
@@ -104,7 +104,7 @@ export class VocabularyService {
                 ),
                 result => {
                   const list = result.docs
-                    .map(doc => ({...doc.data() as RecordTypeRaw, id: doc.id}))
+                    .map(doc => ({...doc.data() as WordTypeRaw, id: doc.id}))
 
                   subscriber.next(list);
                 })
@@ -226,7 +226,7 @@ export class VocabularyService {
 
 
       const result = resultRaw.docs
-        .map(doc => (mapDoc({ ...doc.data() as RecordTypeRaw, id: doc.id })))
+        .map(doc => (mapDoc({ ...doc.data() as WordTypeRaw, id: doc.id })))
 
 
       valueFromCache.push(result);
@@ -239,7 +239,7 @@ export class VocabularyService {
   }
 
   private searchWords(args: {uid: string; word: string }) {
-    return new Promise<(RecordTypeRaw & { id: string})[]>(resolve => {
+    return new Promise<(WordTypeRaw & { id: string})[]>(resolve => {
       return onSnapshot(
         query(
           collection(this.firestore, "users", args.uid, "vocabulary"),
@@ -247,7 +247,7 @@ export class VocabularyService {
           where('word', '<=', args.word.trim().toLowerCase() + '\uf8ff'),
           orderBy('word'),
         ),
-        result => resolve(result.docs.map(doc => ({ ...doc.data() as RecordTypeRaw, id: doc.id }))),
+        result => resolve(result.docs.map(doc => ({ ...doc.data() as WordTypeRaw, id: doc.id }))),
         (error: unknown) => {
           console.error(error);
           resolve([])
