@@ -30,6 +30,7 @@ import { ListeningService } from '../../../feature/training/listening/listening.
 import { PlaySoundFactory } from '../../../shared/play-sound'
 import { ResultsListComponent } from '../../../shared/results-list/results-list.component'
 import { WordStatusComponent } from '../../../shared/word-status/word-status.component'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 
 @Component({
   selector: 'dic-listening',
@@ -139,6 +140,19 @@ export class ListeningComponent {
     shareReplay({ refCount: true, bufferSize: 1})
   )
 
+
+  constructor() {
+    const visualViewport = this.documentRef.defaultView?.visualViewport;
+    if(!visualViewport) {
+      return;
+    }
+    fromEvent(visualViewport, 'scroll').pipe(
+      takeUntilDestroyed()
+    ).subscribe(() => {
+      this.documentRef.defaultView?.scrollTo(0, 0);
+    })
+  }
+
   protected enterHandler($event: Event, item: WordType, inputRef: HTMLDivElement) {
     $event.preventDefault();
     return this.clickHandler(item, inputRef);
@@ -159,15 +173,15 @@ export class ListeningComponent {
     } else {
       this.playSound('/wrong.mp3').subscribe();
       this.incorrectAnswersIds.add(item.id);
-      inputRef.innerText = item.word;
       this.selected.set({ type: 'incorrect' as const, word: item.word, translation: item.translation });
       this.incorrectWords.next(this.incorrectWords.value.concat(item));
     }
-    inputRef.innerText = '';
+
     inputRef.focus();
     asyncScheduler.schedule(() => {
       this.wordCounter$.next(this.wordCounter$.value + 1);
       this.selected.set(undefined);
+      inputRef.innerText = '';
     }, isSuccess ? 1500 : 3000);
 
     this.list$.pipe(

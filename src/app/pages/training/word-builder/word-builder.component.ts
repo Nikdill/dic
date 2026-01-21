@@ -96,7 +96,7 @@ export class WordBuilderComponent {
     asyncScheduler.schedule(() => {
       this.wordCounter$.next(this.wordCounter$.value + 1);
       this.selected.set(undefined);
-    }, 1500);
+    }, isSuccess ? 1500 : 3000);
 
     this.list$.pipe(
       take(1),
@@ -109,7 +109,7 @@ export class WordBuilderComponent {
           incorrectIds,
         }
       }),
-      filter(({ list, correctIds, incorrectIds }) => {
+      filter(({ list, correctIds }) => {
         return correctIds.length === list.length
       }),
       switchMap(({ list, incorrectIds }) => {

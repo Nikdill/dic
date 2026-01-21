@@ -51,7 +51,10 @@
           contenteditable
           (focus)="focusSubject.next()"
           (keydown.enter)="enterHandler($event, item, wordInputRef)"
-          class="w-full max-h-20 text-white text-xl outline-none resize-none overflow-y-auto text-center"
+          [class.text-rose-400]="selected()?.type === 'incorrect'"
+          [class.text-emerald-500]="selected()?.type === 'correct'"
+          [class.text-white]="!selected()"
+          class="w-full max-h-20 text-xl outline-none resize-none overflow-y-auto text-center"
         ></div>
       </div>
       <button

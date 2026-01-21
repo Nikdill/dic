@@ -9,7 +9,7 @@ import { NgTemplateOutlet } from '@angular/common'
     NgTemplateOutlet,
   ],
   host: {
-    class: 'w-full flex flex-col gap-4 h-full pb-8'
+    class: 'w-full flex flex-col gap-4 h-full pb-4'
   }
 })
 export class ResultsListComponent<T extends { id: string | number }> {

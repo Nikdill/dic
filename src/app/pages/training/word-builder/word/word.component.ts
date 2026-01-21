@@ -108,7 +108,7 @@ export class WordComponent implements OnChanges {
 
       if(isDone) {
         this.doneIncorrect.set(true);
-        this.selectedLetterIndexesSync.set(this.word().word.trim().split('').map((_, index) => index));
+        this.selectedLetterIndexesSync.set(this.mixedWord().map((_, index) => index));
       }
 
       asyncScheduler.schedule(() => {
