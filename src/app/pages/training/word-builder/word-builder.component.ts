@@ -110,6 +110,7 @@ export class WordBuilderComponent {
       filter(list => {
         return list.length === this.wordCounter$.value + 1;
       }),
+      switchMap(() => this.words$.pipe(take(1))),
       switchMap(list => {
         const incorrectIds = Array.from(this.incorrectAnswersIds);
 

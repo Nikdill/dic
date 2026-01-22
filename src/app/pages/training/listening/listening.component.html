@@ -2,89 +2,90 @@
   class="fixed h-full w-full left-0 top-0 flex items-center justify-center p-4 bg-gray-800"
   [style.height.px]="visualViewportHeight$ | async"
 >
-  @if(queue$ | async; as item) {
-    <div class="flex flex-col w-full items-center justify-between h-full max-h-100">
-      <div
-        class="flex flex-col items-center justify-start gap-4">
-          <div
-            class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 overflow-hidden"
-            [class.bg-emerald-500]="selected()?.type === 'correct'"
-            [class.border-emerald-500]="selected()?.type === 'correct'"
-            [class.border-rose-400]="selected()?.type === 'incorrect'"
-            [class.border-transparent]="!selected()"
-            [class.text-white]="!selected() || selected()?.type === 'correct'"
-            [class.text-rose-400]="selected()?.type === 'incorrect'"
-          >
-            @switch (selected()?.type) {
-              @case ('correct') {
-                <mat-icon class="scale-200" aria-hidden="false" aria-label=Correct>done</mat-icon>
-              }
-              @case ('incorrect') {
-                <mat-icon  class="scale-200" aria-hidden="false" aria-label=Incorrect>clear</mat-icon>
-              }
-              @default {
-                <button
-                  type="button"
-                  (click)="playHandler(item)"
-                  class="flex items-center justify-center w-20 aspect-square cursor-pointer text-4xl rounded-full bg-blue-500 text-white">
-                  <mat-icon class="scale-200" aria-hidden="false" aria-label=Play>volume_up</mat-icon>
-                </button>
-              }
-            }
-          </div>
-          <div class="mt-4 flex flex-col items-center text-center">
-            <div
-              class="text-2xl line-clamp-1"
-              [class.text-rose-400]="selected()?.type === 'incorrect'"
-              [class.text-emerald-500]="selected()?.type === 'correct'"
-            >{{ selected()?.word || '&nbsp;' }}</div>
-            <div class="text-lg text-white mt-2 line-clamp-1">
-              {{ selected()?.translation || '&nbsp;' }}
-            </div>
-          </div>
-      </div>
-      <div class="w-full max-w-80  border-b-3 border-b-gray-700">
+  @if(listeningPageService.queue$ | async; as queue) {
+    @if(queue.current) {
+      <div class="flex flex-col w-full items-center justify-between h-full max-h-100">
         <div
-          autofocus
-          #wordInputRef
-          type="text"
-          contenteditable
-          (focus)="focusSubject.next()"
-          (touchmove)="$event.preventDefault();$event.stopPropagation()"
-          (keydown.enter)="enterHandler($event, item, wordInputRef)"
-          [class.text-rose-400]="selected()?.type === 'incorrect'"
-          [class.text-emerald-500]="selected()?.type === 'correct'"
-          [class.text-white]="!selected()"
-          class="w-full max-h-20 text-xl outline-none resize-none overflow-y-auto text-center"
-        ></div>
+          class="flex flex-col items-center justify-start gap-4">
+            <div
+              class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 overflow-hidden"
+              [class.bg-emerald-500]="queue.selected?.type === 'correct'"
+              [class.border-emerald-500]="queue.selected?.type === 'correct'"
+              [class.border-rose-400]="queue.selected?.type === 'incorrect'"
+              [class.border-transparent]="!queue.selected"
+              [class.text-white]="!queue.selected || queue.selected.type === 'correct'"
+              [class.text-rose-400]="queue.selected?.type === 'incorrect'"
+            >
+              @switch (queue.selected?.type) {
+                @case ('correct') {
+                  <mat-icon class="scale-200" aria-hidden="false" aria-label=Correct>done</mat-icon>
+                }
+                @case ('incorrect') {
+                  <mat-icon  class="scale-200" aria-hidden="false" aria-label=Incorrect>clear</mat-icon>
+                }
+                @default {
+                  <button
+                    type="button"
+                    (click)="playHandler(queue.current)"
+                    class="flex items-center justify-center w-20 aspect-square cursor-pointer text-4xl rounded-full bg-blue-500 text-white">
+                    <mat-icon class="scale-200" aria-hidden="false" aria-label=Play>volume_up</mat-icon>
+                  </button>
+                }
+              }
+            </div>
+            <div class="mt-4 flex flex-col items-center text-center">
+              <div
+                class="text-2xl line-clamp-1"
+                [class.text-rose-400]="queue.selected?.type === 'incorrect'"
+                [class.text-emerald-500]="queue.selected?.type === 'correct'"
+              >{{ queue.selected?.word || '&nbsp;' }}</div>
+              <div class="text-lg text-white mt-2 line-clamp-1">
+                {{ queue.selected?.translation || '&nbsp;' }}
+              </div>
+            </div>
+        </div>
+        <div class="w-full max-w-80  border-b-3 border-b-gray-700">
+          <div
+            autofocus
+            #wordInputRef
+            type="text"
+            contenteditable
+            (focus)="focusSubject.next()"
+            (touchmove)="$event.preventDefault();$event.stopPropagation()"
+            (keydown.enter)="enterHandler($event, queue.current, wordInputRef)"
+            [class.text-rose-400]="queue.selected?.type === 'incorrect'"
+            [class.text-emerald-500]="queue.selected?.type === 'correct'"
+            [class.text-white]="!queue.selected"
+            class="w-full max-h-20 text-xl outline-none resize-none overflow-y-auto text-center"
+          ></div>
+        </div>
+        <button
+          class="w-full max-w-80 rounded-sm text-white bg-blue-500 p-2 text-md cursor-pointer"
+          (click)="listeningPageService.clickHandler(queue.current, wordInputRef)"
+        >
+          Check
+        </button>
       </div>
-      <button
-        class="w-full max-w-80 rounded-sm text-white bg-blue-500 p-2 text-md cursor-pointer"
-        (click)="clickHandler(item, wordInputRef)"
-      >
-        Check
-      </button>
-    </div>
-  } @else {
-    @if(resultList$ | async; as list) {
-      <ng-template #titleTemplate let-item="item">
-        {{ item.word }}
-      </ng-template>
-      <ng-template #subTitleTemplate let-item="item">
-        {{ item.translation }}
-      </ng-template>
-      <ng-template #liRightTemplateContent let-item="item">
-        <dic-word-status [status]="item.status"/>
-      </ng-template>
-      <dic-results-list
-        [list]="list"
-        [titleTemplate]="titleTemplate"
-        [subTitleTemplate]="subTitleTemplate"
-        [liRightContentTemplate]="liRightTemplateContent"
-        (replayChange)="replay()"
-        (exitChange)="exit()"
-      />
+    } @else {
+      @if(listeningPageService.resultList$ | async; as list) {
+        <ng-template #titleTemplate let-item="item">
+          {{ item.word }}
+        </ng-template>
+        <ng-template #subTitleTemplate let-item="item">
+          {{ item.translation }}
+        </ng-template>
+        <ng-template #liRightTemplateContent let-item="item">
+          <dic-word-status [status]="item.status"/>
+        </ng-template>
+        <dic-results-list
+          [list]="list"
+          [titleTemplate]="titleTemplate"
+          [subTitleTemplate]="subTitleTemplate"
+          [liRightContentTemplate]="liRightTemplateContent"
+          (replayChange)="replay()"
+          (exitChange)="exit()"
+        />
+      }
     }
   }
-
 </div>
