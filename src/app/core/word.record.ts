@@ -44,8 +44,8 @@ export type WordStatus = {
 
 export class Status {
   // Добавить право
-  static addStatus(value: StatusType, status: StatusType) {// Побитовое ИЛИ
-    return value | status;
+  static addStatus(value: StatusType, status: StatusType): StatusType {// Побитовое ИЛИ
+    return (value | status) as StatusType;
   }
 
   // Удалить право

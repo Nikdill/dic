@@ -2,21 +2,21 @@
   class="fixed h-full w-full left-0 top-0 flex items-center justify-center p-4 bg-gray-800"
   [style.height.px]="visualViewportHeight$ | async"
 >
-  @if(listeningPageService.queue$ | async; as queue) {
-    @if(queue.current) {
+  @if(listeningPageService.page$ | async; as page) {
+    @if(page.current) {
       <div class="flex flex-col w-full items-center justify-between h-full max-h-100">
         <div
           class="flex flex-col items-center justify-start gap-4">
             <div
               class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 overflow-hidden"
-              [class.bg-emerald-500]="queue.selected?.type === 'correct'"
-              [class.border-emerald-500]="queue.selected?.type === 'correct'"
-              [class.border-rose-400]="queue.selected?.type === 'incorrect'"
-              [class.border-transparent]="!queue.selected"
-              [class.text-white]="!queue.selected || queue.selected.type === 'correct'"
-              [class.text-rose-400]="queue.selected?.type === 'incorrect'"
+              [class.bg-emerald-500]="page.selected?.type === 'correct'"
+              [class.border-emerald-500]="page.selected?.type === 'correct'"
+              [class.border-rose-400]="page.selected?.type === 'incorrect'"
+              [class.border-transparent]="!page.selected"
+              [class.text-white]="!page.selected || page.selected.type === 'correct'"
+              [class.text-rose-400]="page.selected?.type === 'incorrect'"
             >
-              @switch (queue.selected?.type) {
+              @switch (page.selected?.type) {
                 @case ('correct') {
                   <mat-icon class="scale-200" aria-hidden="false" aria-label=Correct>done</mat-icon>
                 }
@@ -26,7 +26,7 @@
                 @default {
                   <button
                     type="button"
-                    (click)="playHandler(queue.current)"
+                    (click)="playHandler(page.current)"
                     class="flex items-center justify-center w-20 aspect-square cursor-pointer text-4xl rounded-full bg-blue-500 text-white">
                     <mat-icon class="scale-200" aria-hidden="false" aria-label=Play>volume_up</mat-icon>
                   </button>
@@ -36,11 +36,11 @@
             <div class="mt-4 flex flex-col items-center text-center">
               <div
                 class="text-2xl line-clamp-1"
-                [class.text-rose-400]="queue.selected?.type === 'incorrect'"
-                [class.text-emerald-500]="queue.selected?.type === 'correct'"
-              >{{ queue.selected?.word || '&nbsp;' }}</div>
+                [class.text-rose-400]="page.selected?.type === 'incorrect'"
+                [class.text-emerald-500]="page.selected?.type === 'correct'"
+              >{{ page.selected?.word || '&nbsp;' }}</div>
               <div class="text-lg text-white mt-2 line-clamp-1">
-                {{ queue.selected?.translation || '&nbsp;' }}
+                {{ page.selected?.translation || '&nbsp;' }}
               </div>
             </div>
         </div>
@@ -52,16 +52,16 @@
             contenteditable
             (focus)="focusSubject.next()"
             (touchmove)="$event.preventDefault();$event.stopPropagation()"
-            (keydown.enter)="enterHandler($event, queue.current, wordInputRef)"
-            [class.text-rose-400]="queue.selected?.type === 'incorrect'"
-            [class.text-emerald-500]="queue.selected?.type === 'correct'"
-            [class.text-white]="!queue.selected"
+            (keydown.enter)="enterHandler($event, page, wordInputRef)"
+            [class.text-rose-400]="page.selected?.type === 'incorrect'"
+            [class.text-emerald-500]="page.selected?.type === 'correct'"
+            [class.text-white]="!page.selected"
             class="w-full max-h-20 text-xl outline-none resize-none overflow-y-auto text-center"
           ></div>
         </div>
         <button
           class="w-full max-w-80 rounded-sm text-white bg-blue-500 p-2 text-md cursor-pointer"
-          (click)="listeningPageService.clickHandler(queue.current, wordInputRef)"
+          (click)="listeningPageService.select(page, wordInputRef)"
         >
           Check
         </button>
@@ -78,6 +78,7 @@
           <dic-word-status [status]="item.status"/>
         </ng-template>
         <dic-results-list
+          class="block pb-4"
           [list]="list"
           [titleTemplate]="titleTemplate"
           [subTitleTemplate]="subTitleTemplate"

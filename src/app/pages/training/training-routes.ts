@@ -18,8 +18,27 @@ export const TRAINING_ROUTES: Routes = [
         const command = new RedirectCommand(inject(Router).parseUrl("/"));
         return inject(RepetitionService).getWords().pipe(
           map(list => {
-            return list.length < 1 ? command : list
-          })
+            if(list.length < 2) {
+              return command
+            }
+            const half = Math.floor(list.length / 2);
+            const words = list.slice(0, half)
+            const translations = list.slice(half).sort(() => Math.random() > 0.5 ? -1 : 1)
+            return words
+              .map((item, index) => {
+                return {
+                  ...item,
+                  variants: [{
+                    type: 'correct' as const,
+                    translation: item.translation,
+                  },
+                    {
+                      type: 'incorrect' as const,
+                      translation: translations[index].translation
+                    }].sort(() => Math.random() > 0.5 ? -1 : 1)
+                }
+              })
+          }),
         )
       }
     },
@@ -48,7 +67,7 @@ export const TRAINING_ROUTES: Routes = [
         const command = new RedirectCommand(inject(Router).parseUrl("/"));
         return inject(WordBuilderService).getWords().pipe(
           map(list => {
-            return list.length < 1 ? command : list.slice(0,2)
+            return list.length < 1 ? command : list
           })
         )
       }

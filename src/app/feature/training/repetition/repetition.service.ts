@@ -3,7 +3,7 @@ import { Observable, of, switchMap, take } from 'rxjs'
 import { collection, doc, getDocs, limit, orderBy, query, where, writeBatch } from 'firebase/firestore'
 import { AuthService } from '../../../core/auth/auth.service'
 import { FIREBASE_FIRE_STORE } from '../../../core/firebase/firebase-app'
-import { mapDoc, WordType, WordTypeRaw, StatusType } from '../../../core/word.record'
+import { mapDoc, WordType, WordTypeRaw, StatusType, Status } from '../../../core/word.record'
 
 @Injectable({ providedIn: 'root' })
 export class RepetitionService {
@@ -19,11 +19,13 @@ export class RepetitionService {
             return of([]);
           }
 
+          const status = (Object.values(StatusType) as StatusType[]).reduce((
+            (status, itemStatus) => Status.addStatus(status, itemStatus))
+          );
           return getDocs(query(
             collection(this.firestore, "users", auth.uid, "vocabulary"),
             orderBy('updatedAt'),
-            where('status', 'in', Object.values(StatusType)
-              .filter(status => ![StatusType.LISTENING as number].includes(status))),
+            where('status', '==', status),
             limit(60)
           )).then(result => {
 
@@ -34,7 +36,7 @@ export class RepetitionService {
     )
   }
 
-  updateWords(args: { correct: string[]; incorrect: string[]}) {
+  updateWords(args: { correct: {  id: string }[]; incorrect: {  id: string }[]}) {
     return this.authService.auth$.pipe(
       take(1),
       switchMap(
@@ -45,12 +47,12 @@ export class RepetitionService {
 
           const batch = writeBatch(this.firestore);
           const updatedAt = Date.now();
-          args.correct.forEach(id => {
-            const docRef = doc(collection(this.firestore, "users", auth.uid, "vocabulary"), id)
+          args.correct.forEach(item => {
+            const docRef = doc(collection(this.firestore, "users", auth.uid, "vocabulary"), item.id)
             batch.update(docRef, { updatedAt });
           });
-          args.incorrect.forEach(id => {
-            const docRef = doc(collection(this.firestore, "users", auth.uid, "vocabulary"), id)
+          args.incorrect.forEach(item => {
+            const docRef = doc(collection(this.firestore, "users", auth.uid, "vocabulary"), item.id)
             batch.update(docRef, { updatedAt, status: StatusType.NEW });
           });
           return batch.commit();

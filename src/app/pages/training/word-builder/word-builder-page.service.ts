@@ -6,11 +6,10 @@ import {
   switchMap,
 } from 'rxjs'
 import { WordType } from '../../../core/word.record'
-import { PlaySoundFactory } from '../../../shared/play-sound'
-import { ListeningService } from '../../../feature/training/listening/listening.service'
+import { WordBuilderService } from '../../../feature/training/word-builder/word-builder.service'
 import { PageService, PageState } from '../page.service'
 
-export type ListeningPageType = {
+export type WordBuilderPageType = {
   words: WordType[];
   queue: WordType[];
   current: WordType | undefined;
@@ -23,10 +22,8 @@ export type ListeningPageType = {
 }
 
 @Injectable()
-export class ListeningPageService extends PageService<ListeningPageType> {
-  private readonly listeningService = inject(ListeningService);
-  private readonly playSound = PlaySoundFactory();
-
+export class WordBuilderPageService extends PageService<WordBuilderPageType> {
+  private readonly wordBuilderService = inject(WordBuilderService);
 
   readonly page$ = this.pageState$.pipe(
     switchMap(([prevState, currentState]) => {
@@ -51,26 +48,28 @@ export class ListeningPageService extends PageService<ListeningPageType> {
     shareReplay({ refCount: true, bufferSize: 1})
   )
 
-  select(state: ListeningPageType, inputRef: HTMLDivElement) {
-    const value = inputRef.innerText.trim().toLowerCase();
-    if(!value.length || state.selected || !state.current) {
+  select(state: WordBuilderPageType, args: { type: 'correct' | 'incorrect' | 'mistake' }) {
+    if(state.selected || !state.current) {
       return
     }
-      const isSuccess = state.current.word.trim().toLowerCase() === inputRef.innerText.trim().toLowerCase();
       const queue = state.queue.slice(0);
       const incorrectIds = state.incorrectIds;
 
-      if(isSuccess) {
-        this.playSound('/correct.mp3').subscribe();
-      } else {
-        this.playSound('/wrong.mp3').subscribe();
-      }
-      inputRef.focus();
+      let selected: WordBuilderPageType['selected'];
 
-      if(!isSuccess) {
-        incorrectIds.add(state.current.id);
-        queue.push({ ...state.current });
-      }
+     switch (args.type) {
+       case "correct":
+         selected = { type: 'correct' as const, word: state.current.word, translation: state.current.translation };
+         break;
+       case "incorrect":
+         incorrectIds.add(state.current.id);
+         queue.push({ ...state.current });
+         selected = { type: 'incorrect' as const, word: state.current.word, translation: state.current.translation };
+         break;
+       case "mistake":
+         incorrectIds.add(state.current.id);
+         selected = { type: 'correct' as const, word: state.current.word, translation: state.current.translation };
+     }
 
       const current = queue.shift();
 
@@ -78,25 +77,21 @@ export class ListeningPageService extends PageService<ListeningPageType> {
         ...state,
         queue,
         current,
-        selected: { type: isSuccess
-            ? 'correct' : 'incorrect' as const,
-          word: state.current.word,
-          translation: state.current.translation
-        }
+        selected: selected,
       });
 
       if(!current) {
-        this.listeningService.updateWords({
+        this.wordBuilderService.updateWords({
           correct: state.words.filter(item => !incorrectIds.has(item.id)),
           incorrect: state.words.filter(item => incorrectIds.has(item.id)),
         }).subscribe()
       }
   }
 
-  protected activatedRouteStateMap(state: PageState<WordType>): ListeningPageType {
-    return {
-      ...state,
-      selected: undefined
-    }
+  protected override activatedRouteStateMap(state: PageState<WordType>): WordBuilderPageType {
+      return {
+        ...state,
+        selected: undefined,
+      }
   }
 }

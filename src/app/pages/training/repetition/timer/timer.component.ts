@@ -14,7 +14,7 @@ import {
     class: 'relative flex items-center justify-center',
     '[style.width.px]':"(radius() + strokeWidth() / 2)* 2",
     '[style.height.px]': "(radius() + strokeWidth() / 2) * 2"
-  }
+  },
 })
 export class TimerComponent implements AfterViewInit {
   private readonly  circumference = computed(() => {
@@ -30,8 +30,6 @@ export class TimerComponent implements AfterViewInit {
   readonly strokeWidth = input(4);
 
   readonly duration = input.required<number>();
-
-  readonly ended = output<void>();
 
   ngAfterViewInit() {
     requestAnimationFrame(this.animate.bind(this));
@@ -52,7 +50,6 @@ export class TimerComponent implements AfterViewInit {
       requestAnimationFrame(this.animate.bind(this))
     } else {
       this.offset.set('');
-      this.ended.emit();
     }
   }
 }

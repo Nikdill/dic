@@ -1,94 +1,96 @@
-<div
-  class="fixed inset-0 flex items-center justify-center"
-  [class.bg-emerald-500]="(queue$ | async) !== undefined"
->
-  @if(queue$ | async; as item) {
-    <div class="flex flex-col items-center gap-12 w-full p-4">
-      <div class="flex flex-col gap-2 items-center justify-center text-4xl">
-        @if(selected(); as selected) {
-          <div
-            class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 overflow-hidden"
-            [class.bg-emerald-700]="selected.type === 'correct'"
-            [class.border-emerald-700]="selected.type === 'correct'"
-            [class.border-rose-600]="selected.type === 'incorrect'"
-            [class.border-white]="!selected"
-            [class.text-white]="!selected || selected.type === 'correct'"
-            [class.text-rose-600]="selected.type === 'incorrect'"
-          >
-            @switch (selected.type) {
-              @case ('correct') {
-                <mat-icon class="scale-200" aria-hidden="false" aria-label=Correct>done</mat-icon>
+<div class="fixed inset-0 flex items-center justify-center bg-emerald-500">
+  @if(repetitionPageService.page$ | async; as page) {
+    @if(page.current) {
+      <div class="flex flex-col items-center gap-12 w-full p-4">
+        <div class="flex flex-col gap-2 items-center justify-center text-4xl">
+          @if(page.selected) {
+            <div
+              class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 overflow-hidden"
+              [class.bg-emerald-700]="page.selected.type === 'correct'"
+              [class.border-emerald-700]="page.selected.type === 'correct'"
+              [class.border-rose-600]="page.selected.type === 'incorrect'"
+              [class.border-white]="!page.selected"
+              [class.text-white]="!page.selected || page.selected.type === 'correct'"
+              [class.text-rose-600]="page.selected.type === 'incorrect'"
+            >
+              @switch (page.selected.type) {
+                @case ('correct') {
+                  <mat-icon class="scale-200" aria-hidden="false" aria-label=Correct>done</mat-icon>
+                }
+                @case ('incorrect') {
+                  <mat-icon  class="scale-200" aria-hidden="false" aria-label=Incorrect>clear</mat-icon>
+                }
               }
-              @case ('incorrect') {
-                <mat-icon  class="scale-200" aria-hidden="false" aria-label=Incorrect>clear</mat-icon>
-              }
-            }
-          </div>
-        } @else {
-            @if(wordCounter$ | async) {
-              @if(timeEnded()) {
-                <div class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 border-rose-600 text-rose-600 overflow-hidden">
-                  <mat-icon  class="scale-200" aria-hidden="false" aria-label="Time's up">hourglass_disabled</mat-icon>
-                </div>
-              } @else {
-                <dic-timer [duration]="4000" [radius]="39" [strokeWidth]="2" (ended)="timeEnded.set(true)">
-                  <div class="text-white">
-                    {{wordLeftCounter$ | async}}
-                  </div>
-                </dic-timer>
-              }
-            } @else {
+            </div>
+          } @else {
+            @if(page.timer === undefined) {
               <div class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 border-white text-white overflow-hidden">
-                {{wordLeftCounter$ | async}}
+                {{ page.queue.length + 1 }}
+              </div>
+            } @else if(page.timer) {
+              <dic-timer
+                [duration]="page.timer"
+                [radius]="39"
+                [strokeWidth]="2"
+              >
+                <div class="text-white">
+                  {{ page.queue.length + 1 }}
+                </div>
+              </dic-timer>
+            } @else {
+              <div class="relative flex items-center justify-center w-20 h-20 rounded-full border-2 border-rose-600 text-rose-600 overflow-hidden">
+                <mat-icon  class="scale-200" aria-hidden="false" aria-label="Time's up">hourglass_disabled</mat-icon>
               </div>
             }
-        }
+          }
 
 
-        <div class="text-white text-center">
-          {{item.word}}
+          <div class="text-white text-center">
+            {{page.current.word}}
+          </div>
+        </div>
+        <div class="flex flex-col gap-4 w-full max-w-100">
+          @for (variant of page.current.variants; track variant.type) {
+            @let incorrect = page.selected === variant && variant.type === 'incorrect';
+            @let correct = page.selected === variant && variant.type === 'correct';
+            @let disabled = page.timer === 0 && variant.type === 'incorrect';
+            <button
+              class="p-2 text-xl rounded-md min-w-80 whitespace-nowrap text-ellipsis overflow-hidden"
+              [class.bg-gray-100]="!(correct || incorrect)"
+              [class.bg-rose-600]="incorrect"
+              [class.bg-emerald-700]="correct"
+              [class.text-white]="correct || incorrect"
+              (click)="repetitionPageService.select(page, variant)"
+              [disabled]="disabled"
+              [class.text-gray-300]="disabled"
+            >
+              {{ variant.translation }}
+            </button>
+          }
         </div>
       </div>
-      <div class="flex flex-col gap-4 w-full max-w-100">
-        @for (variant of item.variants; track variant) {
-          @let incorrect = selected() === variant && variant.type === 'incorrect';
-          @let correct = selected() === variant && variant.type === 'correct';
-          @let disabled = timeEnded() && variant.type === 'incorrect';
-          <button
-            class="p-2 text-xl rounded-md min-w-80 whitespace-nowrap text-ellipsis overflow-hidden"
-            [class.bg-gray-100]="!(correct || incorrect)"
-            [class.bg-rose-600]="incorrect"
-            [class.bg-emerald-700]="correct"
-            [class.text-white]="correct || incorrect"
-            (click)="selectVariant(item, variant)"
-            [disabled]="disabled"
-            [class.text-gray-300]="disabled"
-          >
-            {{ variant.translation }}
-          </button>
-        }
-      </div>
-    </div>
-  }@else {
-    @if(resultList$ | async; as list) {
-      <ng-template #titleTemplate let-item="item">
-        {{ item.word }}
-      </ng-template>
-      <ng-template #subTitleTemplate let-item="item">
-        {{ item.translation }}
-      </ng-template>
-      <ng-template #liRightTemplateContent let-item="item">
-        <dic-word-status [status]="item.status"/>
-      </ng-template>
-      <dic-results-list
-        class="bg-gray-800 p-4"
-        [list]="list"
-        [titleTemplate]="titleTemplate"
-        [subTitleTemplate]="subTitleTemplate"
-        [liRightContentTemplate]="liRightTemplateContent"
-        (replayChange)="replay()"
-        (exitChange)="exit()"
-      />
+    }@else {
+      @if(repetitionPageService.resultList$ | async; as list) {
+        <ng-template #titleTemplate let-item="item">
+          {{ item.word }}
+        </ng-template>
+        <ng-template #subTitleTemplate let-item="item">
+          {{ item.translation }}
+        </ng-template>
+        <ng-template #liRightTemplateContent let-item="item">
+          <dic-word-status [status]="item.status"/>
+        </ng-template>
+        <dic-results-list
+          class="bg-gray-800 p-4"
+          [list]="list"
+          [titleTemplate]="titleTemplate"
+          [subTitleTemplate]="subTitleTemplate"
+          [liRightContentTemplate]="liRightTemplateContent"
+          (replayChange)="replay()"
+          (exitChange)="exit()"
+        />
+      }
     }
   }
+
 </div>

@@ -34,7 +34,7 @@ import { PlaySoundFactory } from '../../../shared/play-sound'
 import { ResultsListComponent } from '../../../shared/results-list/results-list.component'
 import { WordStatusComponent } from '../../../shared/word-status/word-status.component'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { ListeningPageService } from './listening-page.service'
+import { ListeningPageService, ListeningPageType } from './listening-page.service'
 import { query } from 'firebase/firestore'
 
 @Component({
@@ -111,7 +111,7 @@ export class ListeningComponent implements OnDestroy {
       this.documentRef.defaultView?.scrollTo(0, 0);
     })
 
-    this.listeningPageService.queue$.pipe(
+    this.listeningPageService.page$.pipe(
       takeUntilDestroyed(),
       map(state => state.current),
       distinctUntilChanged(),
@@ -121,7 +121,7 @@ export class ListeningComponent implements OnDestroy {
         }
     })
 
-    this.listeningPageService.queue$.pipe(
+    this.listeningPageService.page$.pipe(
       takeUntilDestroyed(),
     ).subscribe(state => {
       if(!state.selected) {
@@ -140,9 +140,9 @@ export class ListeningComponent implements OnDestroy {
     this.renderer2.removeStyle(this.documentRef.body, '-ms-touch-action')
   }
 
-  protected enterHandler($event: Event, item: WordType, inputRef: HTMLDivElement) {
+  protected enterHandler($event: Event, state: ListeningPageType, inputRef: HTMLDivElement) {
     $event.preventDefault();
-    return this.listeningPageService.clickHandler(item, inputRef);
+    return this.listeningPageService.select(state, inputRef);
   }
 
   protected playHandler(item: WordType) {
