@@ -193,7 +193,6 @@ export class VocabularyService {
             buffer.shift();
             this.cache.set(auth.uid, buffer);
           }
-          this.search('');
         })
       }),
     )

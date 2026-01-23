@@ -1,5 +1,5 @@
 <div
-  class="fixed h-full w-full left-0 top-0 flex items-center justify-center p-4 bg-gray-800"
+  class="fixed h-full w-full left-0 top-0 flex items-center justify-center p-4"
   [style.height.px]="visualViewportHeight$ | async"
 >
   @if(listeningPageService.page$ | async; as page) {
@@ -68,24 +68,26 @@
       </div>
     } @else {
       @if(listeningPageService.resultList$ | async; as list) {
-        <ng-template #titleTemplate let-item="item">
-          {{ item.word }}
-        </ng-template>
-        <ng-template #subTitleTemplate let-item="item">
-          {{ item.translation }}
-        </ng-template>
-        <ng-template #liRightTemplateContent let-item="item">
-          <dic-word-status [status]="item.status"/>
-        </ng-template>
-        <dic-results-list
-          class="block pb-4"
-          [list]="list"
-          [titleTemplate]="titleTemplate"
-          [subTitleTemplate]="subTitleTemplate"
-          [liRightContentTemplate]="liRightTemplateContent"
-          (replayChange)="replay()"
-          (exitChange)="exit()"
-        />
+        <dic-result-layout>
+          <ng-template #titleTemplate let-item="item">
+            {{ item.word }}
+          </ng-template>
+          <ng-template #subTitleTemplate let-item="item">
+            {{ item.translation }}
+          </ng-template>
+          <ng-template #liRightTemplateContent let-item="item">
+            <dic-word-status [status]="item.status"/>
+          </ng-template>
+          <ul
+            dicWordsList
+            class="block pb-4 max-w-160 m-auto"
+            [list]="list"
+            [titleTemplate]="titleTemplate"
+            [subTitleTemplate]="subTitleTemplate"
+            [liRightContentTemplate]="liRightTemplateContent"
+          ></ul>
+          <dic-result-actions continueLink="/training/listening" exitLink="/training" />
+        </dic-result-layout>
       }
     }
   }

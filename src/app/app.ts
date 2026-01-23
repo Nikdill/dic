@@ -6,7 +6,10 @@ import { NavigationComponent } from './shared/navigation/navigation.component'
   selector: 'dic-root',
   imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
+  host: {
+    class: 'block min-h-full bg-gray-800'
+  }
 })
 export class App {
   protected readonly title = signal('dic');

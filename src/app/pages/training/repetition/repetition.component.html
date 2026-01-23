@@ -71,6 +71,8 @@
       </div>
     }@else {
       @if(repetitionPageService.resultList$ | async; as list) {
+      <dic-result-layout>
+
         <ng-template #titleTemplate let-item="item">
           {{ item.word }}
         </ng-template>
@@ -80,15 +82,16 @@
         <ng-template #liRightTemplateContent let-item="item">
           <dic-word-status [status]="item.status"/>
         </ng-template>
-        <dic-results-list
-          class="bg-gray-800 p-4"
+        <ul
+          dicWordsList
+          class="bg-gray-800 p-4 max-w-160 m-auto"
           [list]="list"
           [titleTemplate]="titleTemplate"
           [subTitleTemplate]="subTitleTemplate"
           [liRightContentTemplate]="liRightTemplateContent"
-          (replayChange)="replay()"
-          (exitChange)="exit()"
-        />
+        ></ul>
+        <dic-result-actions continueLink="/training/repetition" exitLink="/training" />
+      </dic-result-layout>
       }
     }
   }

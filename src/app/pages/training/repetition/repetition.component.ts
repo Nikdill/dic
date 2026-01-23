@@ -15,10 +15,12 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { RepetitionService } from '../../../feature/training/repetition/repetition.service'
 import { WordType } from '../../../core/word.record'
 import { PlaySoundFactory } from '../../../shared/play-sound'
-import { ResultsListComponent } from '../../../shared/results-list/results-list.component'
+import { WordsListComponent } from '../../../shared/words-list/words-list.component'
 import { WordStatusComponent } from '../../../shared/word-status/word-status.component'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { RepetitionPageService } from './repetition-page.service'
+import { ResultActionsComponent } from '../components/result-actions/result-actions.component'
+import { ResultLayoutComponent } from '../components/result-layout/result-layout.component'
 
 type WordItemType = {
   id: string;
@@ -36,8 +38,10 @@ type WordItemType = {
     AsyncPipe,
     MatIcon,
     TimerComponent,
-    ResultsListComponent,
+    WordsListComponent,
     WordStatusComponent,
+    ResultActionsComponent,
+    ResultLayoutComponent,
   ],
   providers: [RepetitionPageService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -57,14 +61,5 @@ export class RepetitionComponent {
         this.voice.play(current.word);
       }
     });
-  }
-
-
-  protected replay() {
-    this.router.navigate(['training', 'repetition'], { onSameUrlNavigation: 'reload' }).then();
-  }
-
-  protected exit() {
-    this.router.navigate(['training']).then();
   }
 }

@@ -31,11 +31,13 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { Voice } from '../../../shared/voice'
 import { ListeningService } from '../../../feature/training/listening/listening.service'
 import { PlaySoundFactory } from '../../../shared/play-sound'
-import { ResultsListComponent } from '../../../shared/results-list/results-list.component'
+import { WordsListComponent } from '../../../shared/words-list/words-list.component'
 import { WordStatusComponent } from '../../../shared/word-status/word-status.component'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ListeningPageService, ListeningPageType } from './listening-page.service'
 import { query } from 'firebase/firestore'
+import { ResultActionsComponent } from '../components/result-actions/result-actions.component'
+import { ResultLayoutComponent } from '../components/result-layout/result-layout.component'
 
 @Component({
   selector: 'dic-listening',
@@ -43,8 +45,10 @@ import { query } from 'firebase/firestore'
   imports: [
     AsyncPipe,
     MatIcon,
-    ResultsListComponent,
+    WordsListComponent,
     WordStatusComponent,
+    ResultActionsComponent,
+    ResultLayoutComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [ListeningPageService],
@@ -147,14 +151,5 @@ export class ListeningComponent implements OnDestroy {
 
   protected playHandler(item: WordType) {
     this.voice.play(item.word);
-  }
-
-  protected replay() {
-    this.router.navigate(['training', 'listening'], { onSameUrlNavigation: 'reload' }).then(() => {
-    });
-  }
-
-  protected exit() {
-    this.router.navigate(['training']).then();
   }
 }

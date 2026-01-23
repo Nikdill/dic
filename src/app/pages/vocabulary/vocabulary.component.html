@@ -1,35 +1,64 @@
-<dic-navigation class="block p-2 mb-8" />
+<dic-layout>
+  <div class="sticky flex flex-col top-0 w-full bg-gray-800">
+    <dic-navigation class="block pt-2 mb-2" />
 
-<div class="flex w-full gap-4">
-   <mat-form-field class="grow">
-     <mat-label>Search</mat-label>
-     <input #searchInputRef matInput (input)="onInput($event)" />
-   </mat-form-field>
+    <div class="flex gap-2 items-center">
+      <div (click)="searchInputRef.focus()" class="relative w-full border-b-3 border-b-gray-700">
+        @if(!searchInputRef.innerText.trim().length) {
+          <div class="absolute left-0 top-1/2 -translate-y-1/2 text-gray-300 text-base">
+            Search words ...
+          </div>
+        }
+        <div
+          autofocus
+          #searchInputRef
+          type="text"
+          contenteditable
+          (input)="onInput($event)"
+          (keydown.enter)="onEnter($event, searchInputRef)"
+          class="w-full max-h-20 py-2 text-white text-base outline-none resize-none overflow-y-auto"
+        ></div>
+      </div>
 
-   <div class="flex gap-2 pt-2">
-     @if(searchInputRef.value.trim().length) {
-       <button matButton="filled" (click)="addNewWord(searchInputRef)">Add</button>
-     }
+        @if(searchInputRef.innerText.trim().length) {
+          <div>
+            <button class="p-1 px-3 rounded-2xl bg-emerald-400 text-white text-base" (click)="addNewWord(searchInputRef)">Add</button>
+          </div>
+        }
+
+    </div>
    </div>
- </div>
 
-@if(listOfWords$ | async; as list) {
-    Count: {{ wordsCount$ | async }}
-    <mat-action-list>
-      @for(item of list; track item.id) {
-        <button mat-list-item class="w-full">
-          <span matListItemIcon>
-            <button class="cursor-pointer" dicPlayButton [text]="item.word">
-              <mat-icon aria-hidden="false" aria-label=Play>play_arrow</mat-icon>
-            </button>
-          </span>
-          <span matListItemTitle>{{item.word}}</span>
-          <span matListItemLine>{{item.translation }}</span>
-          <span matListItemMeta class="flex items-center">
-          <dic-word-status [status]="item.status"/>
-          </span>
-        </button>
-      }
-    </mat-action-list>
-}
+  @if(listOfWords$ | async; as list) {
+      <div class="py-4 text-base text-gray-300">Total: {{ wordsCount$ | async }}</div>
+      <ng-template #titleTemplate let-item="item">
+        {{ item.word }}
+      </ng-template>
+      <ng-template #subTitleTemplate let-item="item">
+        {{ item.translation }}
+      </ng-template>
+      <ng-template #liLeftTemplateContent let-item="item">
+        <div>
+          <button
+            dicPlayButton
+            [text]="item.word"
+            class="flex p-1 leading-1 rounded-full bg-emerald-400 text-white cursor-pointer">
+            <mat-icon aria-hidden="false" aria-label=Play>volume_up</mat-icon>
+          </button>
+        </div>
+      </ng-template>
+    <ng-template #liRightTemplateContent let-item="item">
+        <dic-word-status [status]="item.status"/>
+      </ng-template>
+      <ul
+        dicWordsList
+        class="block pb-4 max-w-260 m-auto"
+        [list]="list"
+        [titleTemplate]="titleTemplate"
+        [subTitleTemplate]="subTitleTemplate"
+        [liLeftTemplateContent]="liLeftTemplateContent"
+        [liRightContentTemplate]="liRightTemplateContent"
+      ></ul>
+  }
 
+</dic-layout>

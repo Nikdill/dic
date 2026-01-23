@@ -16,7 +16,7 @@ export type WordBuilderPageType = {
   selected: {
     type: 'correct' | 'incorrect';
     word: string;
-    translation: string
+    translation: string;
   } | undefined;
   incorrectIds: Set<string>;
 }

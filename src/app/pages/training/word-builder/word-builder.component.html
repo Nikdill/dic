@@ -1,5 +1,5 @@
-<div class="fixed w-full h-full left-0 top-0 flex justify-center items-center p-4 bg-gray-800">
-  @if(wordBuilderPageService.page$ | async; as page) {
+<div class="fixed w-full h-full left-0 top-0 flex justify-center items-center p-4">
+@if(wordBuilderPageService.page$ | async; as page) {
   @if(page.current) {
     <div class="flex w-full flex-col gap-4 items-center">
       <h4 class="text-base text-white line-clamp-1">Build a word from the letters</h4>
@@ -20,26 +20,27 @@
     </div>
   } @else {
     @if(wordBuilderPageService.resultList$ | async; as list) {
-      <ng-template #titleTemplate let-item="item">
-        {{ item.word }}
-      </ng-template>
-      <ng-template #subTitleTemplate let-item="item">
-        {{ item.translation }}
-      </ng-template>
-      <ng-template #liRightTemplateContent let-item="item">
-        <dic-word-status [status]="item.status"/>
-      </ng-template>
-      <dic-results-list
-        class="block pb-4"
-        [list]="list"
-        [titleTemplate]="titleTemplate"
-        [subTitleTemplate]="subTitleTemplate"
-        [liRightContentTemplate]="liRightTemplateContent"
-        (replayChange)="replay()"
-        (exitChange)="exit()"
-      />
+      <dic-result-layout>
+          <ng-template #titleTemplate let-item="item">
+            {{ item.word }}
+          </ng-template>
+          <ng-template #subTitleTemplate let-item="item">
+            {{ item.translation }}
+          </ng-template>
+          <ng-template #liRightTemplateContent let-item="item">
+            <dic-word-status [status]="item.status"/>
+          </ng-template>
+          <ul dicWordsList
+              class="block pb-4 max-w-160 m-auto overflow-auto"
+              [list]="list"
+              [titleTemplate]="titleTemplate"
+              [subTitleTemplate]="subTitleTemplate"
+              [liRightContentTemplate]="liRightTemplateContent"
+          ></ul>
+          <dic-result-actions continueLink="/training/word-builder" exitLink="/training" />
+      </dic-result-layout>
     }
   }
-  }
+}
 
 </div>

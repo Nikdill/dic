@@ -19,10 +19,12 @@ import { ListeningService } from '../../../feature/training/listening/listening.
 import { PlaySoundFactory } from '../../../shared/play-sound'
 import { WordComponent } from './word/word.component'
 import { WordBuilderService } from '../../../feature/training/word-builder/word-builder.service'
-import { ResultsListComponent } from '../../../shared/results-list/results-list.component'
+import { WordsListComponent } from '../../../shared/words-list/words-list.component'
 import { WordStatusComponent } from '../../../shared/word-status/word-status.component'
 import { WordBuilderPageService } from './word-builder-page.service'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
+import { ResultActionsComponent } from '../components/result-actions/result-actions.component'
+import { ResultLayoutComponent } from '../components/result-layout/result-layout.component'
 
 @Component({
   selector: 'dic-word-builder',
@@ -30,8 +32,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
   imports: [
     AsyncPipe,
     WordComponent,
-    ResultsListComponent,
+    WordsListComponent,
     WordStatusComponent,
+    ResultActionsComponent,
+    ResultLayoutComponent,
   ],
   providers: [WordBuilderPageService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,20 +48,12 @@ export class WordBuilderComponent {
   constructor() {
     this.wordBuilderPageService.page$.pipe(
       takeUntilDestroyed(),
-      map(state => state.current),
+      map(state => state.selected),
       distinctUntilChanged(),
-    ).subscribe(current => {
-      if(current) {
-        this.voice.play(current.word);
+    ).subscribe(selected => {
+      if(selected) {
+        this.voice.play(selected.word);
       }
     })
-  }
-
-  protected replay() {
-    this.router.navigate(['training', 'word-builder'], { onSameUrlNavigation: 'reload' }).then();
-  }
-
-  protected exit() {
-    this.router.navigate(['training']).then();
   }
 }

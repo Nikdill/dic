@@ -1,16 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, DOCUMENT, inject } from '@angular/core'
 import { MatIcon } from '@angular/material/icon'
-import { MatFormField, MatInput, MatLabel } from '@angular/material/input'
-import {
-  MatActionList,
-  MatListItem,
-  MatListItemIcon,
-  MatListItemLine,
-  MatListItemTitle,
-} from '@angular/material/list'
 import { AsyncPipe } from '@angular/common'
 import { bufferCount, filter, fromEvent, map } from 'rxjs'
-import { MatButton } from '@angular/material/button'
 import { Dialog, DialogModule } from '@angular/cdk/dialog'
 import { AddNewWordDialogComponent } from './add-new-word-dialog/add-new-word-dialog.component'
 import { DicPlayButtonComponent } from './play-button/dic-play-button.component'
@@ -18,29 +9,27 @@ import { ScrollingModule } from '@angular/cdk/scrolling'
 import { VocabularyService } from '../../feature/vocabulary/vocabulary.service'
 import { NavigationComponent } from '../../shared/navigation/navigation.component'
 import { WordStatusComponent } from '../../shared/word-status/word-status.component'
+import { WordsListComponent } from '../../shared/words-list/words-list.component'
+import { LayoutComponent } from '../../shared/layout/layout.component'
 
 @Component({
   selector: 'dic-vocabulary',
   templateUrl: 'vocabulary.component.html',
   imports: [
-    MatFormField,
-    MatLabel,
-    MatInput,
     AsyncPipe,
-    MatListItem,
-    MatButton,
-    MatListItemTitle,
-    MatListItemLine,
     DialogModule,
-    MatListItemIcon,
-    DicPlayButtonComponent,
     ScrollingModule,
-    MatIcon,
-    MatActionList,
     NavigationComponent,
     WordStatusComponent,
+    WordsListComponent,
+    LayoutComponent,
+    MatIcon,
+    DicPlayButtonComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block min-h-full'
+  }
 })
 export class VocabularyComponent {
   private readonly dialog = inject(Dialog);
@@ -87,16 +76,24 @@ export class VocabularyComponent {
   }
 
   protected onInput(event: Event) {
-    this.vocabularyService.search((event.currentTarget as HTMLInputElement).value);
+    this.vocabularyService.search((event.currentTarget as HTMLDivElement).innerText);
   }
 
-  protected addNewWord(inputElement: HTMLInputElement) {
+  protected onEnter(event: Event, inputElement: HTMLDivElement) {
+    event.preventDefault();
+    this.addNewWord(inputElement);
+  }
+
+
+  protected addNewWord(inputElement: HTMLDivElement) {
     this.dialog.open(AddNewWordDialogComponent, {
       minWidth: '300px',
       data: {
-        inputValue: inputElement.value.trim().toLowerCase()
+        inputValue: inputElement.innerText.trim().toLowerCase()
       }
+    }).componentRef?.onDestroy(() => {
+      this.vocabularyService.search('');
+      inputElement.innerText = '';
     });
-    inputElement.value = '';
   }
 }
